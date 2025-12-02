@@ -1,4 +1,4 @@
-package com.justcalls.ui.components
+package com.justcalls.ui.components.common
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -61,3 +61,5 @@ fun IconPressableButton(
         )
     }
 }
+
+

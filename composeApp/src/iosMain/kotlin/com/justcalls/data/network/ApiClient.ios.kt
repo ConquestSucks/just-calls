@@ -1,0 +1,12 @@
+package com.justcalls.data.network
+
+import io.ktor.client.HttpClientEngine
+import io.ktor.client.engine.darwin.Darwin
+
+actual fun createHttpClientEngine(): HttpClientEngine {
+    return Darwin.create {
+        configureRequest {
+            setAllowsCellularAccess(true)
+        }
+    }
+}

@@ -12,5 +12,12 @@ object AppColors {
     val TextSecondary = Color(0xFF606378)
     val TextHeader = Color(0xFF32354B)
     val GradientColors = listOf(Color(0xFF6665F1), Color(0xFF8E65F6))
+    
+    val InputBorder = Color(0xFFE2E8F0)
+    val InputBackground = Color(0xFFFFFFFF)
+    val Error = Color(0xFFEF4444)
+    val TabInactive = Color(0xFF949EB4)
+    val TabActive = Color(0xFF32354B)
+    val Link = Color(0xFF8E65F6)
 }
 

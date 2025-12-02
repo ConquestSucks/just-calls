@@ -14,34 +14,80 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.justcalls.ui.components.IconPressableButton
+import com.justcalls.data.network.ApiClient
+import com.justcalls.data.network.AuthService
+import com.justcalls.data.storage.TokenStorage
+import com.justcalls.ui.components.common.IconPressableButton
 import com.justcalls.ui.theme.AppColors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
-fun HeaderSection() {
+fun HeaderSection(
+    apiClient: ApiClient? = null,
+    authService: AuthService? = null,
+    onSettingsClick: () -> Unit = {},
+    onUnauthorized: () -> Unit = {}
+) {
+    var displayName by remember { mutableStateOf<String?>(null) }
+    val tokenStorage = remember { TokenStorage() }
+    val finalApiClient = apiClient ?: remember { ApiClient(tokenStorage) }
+    val finalAuthService = authService ?: remember { AuthService(finalApiClient, tokenStorage) }
+    
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.Main) {
+            val result = finalAuthService.getUser()
+            result.fold(
+                onSuccess = { apiResult ->
+                    if (apiResult.success && apiResult.data != null) {
+                        displayName = apiResult.data.displayName
+                    } else {
+                        if (apiResult.error?.code == "UNAUTHORIZED") {
+                            tokenStorage.clearTokens()
+                            onUnauthorized()
+                        }
+                    }
+                },
+                onFailure = { exception ->
+                    val message = exception.message ?: ""
+                    if (message.contains("401") || message.contains("Unauthorized")) {
+                        tokenStorage.clearTokens()
+                        onUnauthorized()
+                    }
+                }
+            )
+        }
+    }
+    
+    val userName = displayName ?: "Пользователь"
 
     Row(
         modifier = Modifier.fillMaxWidth()
-            .padding(top = 40.dp, start = 25.dp, end = 25.dp, bottom = 25.dp),
+            .padding(top = 40.dp, start = 25.dp, end = 25.dp, bottom = 5.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically, // Добавляем центрирование по вертикали
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            UserAvatar("BA")
+            UserAvatar(userName.take(2).uppercase())
             Spacer(modifier = Modifier.width(18.dp))
             Column {
                 Text(
-                    text = "Baobab",
+                    text = userName,
                     color = AppColors.TextHeader,
-                    fontSize = 25.sp,
+                    fontSize = 21.sp,
                     fontWeight = FontWeight.Normal
                 )
                 Row(
@@ -64,8 +110,8 @@ fun HeaderSection() {
         }
         IconPressableButton(
             imgPath = "drawable/ic_settings.svg",
-
-            onClick = {}, contentDescription = "Настройки"
+            onClick = onSettingsClick,
+            contentDescription = "Настройки"
         )
     }
 }

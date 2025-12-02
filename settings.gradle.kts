@@ -25,6 +25,10 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        // JitPack для зависимостей из GitHub (например, audioswitch для LiveKit)
+        maven {
+            url = uri("https://jitpack.io")
+        }
     }
 }
 

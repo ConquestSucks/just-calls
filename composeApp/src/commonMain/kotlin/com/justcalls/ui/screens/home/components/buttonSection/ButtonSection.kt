@@ -10,9 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ButtonSection() {
+fun ButtonSection(
+    onCreateRoomClick: () -> Unit = {}
+) {
     Column(modifier = Modifier.padding(25.dp)) {
-        CreateRoomButton()
+        CreateRoomButton(onClick = onCreateRoomClick)
         Spacer(modifier = Modifier.height(14.dp))
        ConnectRoomButton()
     }

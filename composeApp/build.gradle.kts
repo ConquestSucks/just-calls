@@ -31,8 +31,12 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            implementation(libs.ktor.client.okhttp)
+            // LiveKit SDK для Android
+            implementation("io.livekit:livekit-android:2.4.0")
         }
         iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
 
         }
         commonMain.dependencies {
@@ -45,7 +49,12 @@ kotlin {
 
             implementation(libs.coil.compose)
             implementation("io.coil-kt.coil3:coil-svg:3.2.0")
-
+            
+            // Ktor
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation("io.ktor:ktor-client-core:3.1.3")
         }
     }
 }
