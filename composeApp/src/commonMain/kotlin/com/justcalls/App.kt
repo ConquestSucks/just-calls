@@ -14,10 +14,18 @@ import com.justcalls.ui.screens.room.RoomScreen
 
 @Composable
 fun App() {
-    val tokenStorage = remember { com.justcalls.data.storage.TokenStorage() }
-    val apiClient = remember { com.justcalls.data.network.ApiClient(tokenStorage) }
-    val authService = remember { com.justcalls.data.network.AuthService(apiClient, tokenStorage) }
-    val roomService = remember { RoomService(apiClient, authService) }
+    val tokenStorage = remember { 
+        com.justcalls.data.storage.TokenStorage() 
+    }
+    val apiClient = remember { 
+        com.justcalls.data.network.ApiClient(tokenStorage) 
+    }
+    val authService = remember { 
+        com.justcalls.data.network.AuthService(apiClient, tokenStorage) 
+    }
+    val roomService = remember { 
+        RoomService(apiClient, authService) 
+    }
     
     var isAuthenticated by remember {
         mutableStateOf(tokenStorage.getAccessToken() != null) 
@@ -57,6 +65,7 @@ fun App() {
                 ProfileScreen(
                     apiClient = apiClient,
                     authService = authService,
+                    tokenStorage = tokenStorage,
                     onBackClick = { 
                         showProfile = false
                     },
@@ -72,7 +81,9 @@ fun App() {
                 HomeScreen(
                     apiClient = apiClient,
                     authService = authService,
-                    onSettingsClick = { showProfile = true },
+                    onSettingsClick = { 
+                        showProfile = true
+                    },
                     onCreateRoom = { roomName ->
                         currentRoomName = roomName
                     },

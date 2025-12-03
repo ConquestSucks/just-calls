@@ -26,26 +26,41 @@ class RoomService(
 ) {
 
     private suspend fun <T> executeWithTokenRefresh(
+        requestName: String,
         block: suspend () -> T
     ): Result<T> {
         return try {
-            Result.success(block())
+            val result = block()
+            Result.success(result)
         } catch (e: io.ktor.client.plugins.ClientRequestException) {
-            val statusCode = e.response.status.value
+            val status = e.response.status
+            val statusCode = status.value
+            
             if (statusCode == 401) {
-                println("[RoomService] 401 Unauthorized, пытаемся обновить токен...")
                 val refreshResult = authService.refresh()
-                val refreshBody = refreshResult.getOrNull()
-                val isUnauthorized = refreshBody?.success == false &&
-                    refreshBody.error?.code.equals("UNAUTHORIZED", ignoreCase = true)
+                
+                refreshResult.fold(
+                    onSuccess = { refreshBody ->
+                        val isUnauthorized = refreshBody.success == false &&
+                            refreshBody.error?.code.equals("UNAUTHORIZED", ignoreCase = true) == true
 
-                if (isUnauthorized) {
-                    println("[RoomService] refresh тоже вернул UNAUTHORIZED")
-                    Result.failure(e)
-                } else {
-                    println("[RoomService] Токен обновлен, повторяем запрос комнаты")
-                    Result.success(block())
-                }
+                        if (isUnauthorized) {
+                            Result.failure(e)
+                        } else if (refreshBody.success && refreshBody.data != null) {
+                            try {
+                                val retryResult = block()
+                                Result.success(retryResult)
+                            } catch (retryException: Exception) {
+                                Result.failure(retryException)
+                            }
+                        } else {
+                            Result.failure(e)
+                        }
+                    },
+                    onFailure = { refreshException ->
+                        Result.failure(refreshException)
+                    }
+                )
             } else {
                 Result.failure(e)
             }
@@ -55,28 +70,27 @@ class RoomService(
     }
 
     suspend fun createRoom(title: String): Result<ApiResult<String>> {
-        return executeWithTokenRefresh {
+        return executeWithTokenRefresh("createRoom") {
             val authHeader = apiClient.getAuthHeader()
-            println("[RoomService] createRoom - title=$title, authHeader=${authHeader != null}")
+            val url = "${apiClient.baseUrl}/room/"
 
-            val response = apiClient.client.post("${apiClient.baseUrl}/room/") {
+            val httpResponse: HttpResponse = apiClient.client.post(url) {
                 contentType(ContentType.Application.Json)
                 if (authHeader != null) {
                     header(HttpHeaders.Authorization, authHeader)
                 }
                 setBody(CreateRoomRequest(title = title))
-            }.body<ApiResult<String>>()
-
-            println("[RoomService] createRoom - success=${response.success}, data=${response.data}, error=${response.error?.message}")
+            }
+            
+            val response = httpResponse.body<ApiResult<String>>()
             response
         }
     }
 
     suspend fun getRooms(): Result<ApiResult<List<RoomDto>>> {
-        return executeWithTokenRefresh {
+        return executeWithTokenRefresh("getRooms") {
             val authHeader = apiClient.getAuthHeader()
             val url = "${apiClient.baseUrl}/room/"
-            println("[RoomService] getRooms - URL=$url, authHeaderPresent=${authHeader != null}")
 
             val httpResponse: HttpResponse = apiClient.client.get(url) {
                 if (authHeader != null) {
@@ -84,37 +98,25 @@ class RoomService(
                 }
             }
 
-            val setCookieHeaders = httpResponse.headers.getAll(HttpHeaders.SetCookie)
-            println("[RoomService] getRooms - HTTP статус: ${httpResponse.status}")
-            println("[RoomService] getRooms - Set-Cookie заголовки: $setCookieHeaders")
-
             val response = httpResponse.body<ApiResult<List<RoomDto>>>()
-
-            println(
-                "[RoomService] getRooms - success=${response.success}, " +
-                    "count=${response.data?.size}, errorCode=${response.error?.code}, " +
-                    "errorMessage=${response.error?.message}"
-            )
             response
         }
     }
 
     suspend fun getRoomToken(roomKey: String): Result<ApiResult<RoomTokenResult>> {
-        return executeWithTokenRefresh {
+        return executeWithTokenRefresh("getRoomToken") {
             val authHeader = apiClient.getAuthHeader()
-            println("[RoomService] getRoomToken - roomKey=$roomKey, authHeader=${authHeader != null}")
+            val url = "${apiClient.baseUrl}/room/token"
 
-            val response = apiClient.client.get("${apiClient.baseUrl}/room/token") {
+            val httpResponse: HttpResponse = apiClient.client.get(url) {
                 if (authHeader != null) {
                     header(HttpHeaders.Authorization, authHeader)
                 }
                 parameter("roomKey", roomKey)
-            }.body<ApiResult<RoomTokenResult>>()
-
-            println("[RoomService] getRoomToken - success=${response.success}, userIdentity=${response.data?.userIdentity}, error=${response.error?.message}")
+            }
+            
+            val response = httpResponse.body<ApiResult<RoomTokenResult>>()
             response
         }
     }
 }
-
-

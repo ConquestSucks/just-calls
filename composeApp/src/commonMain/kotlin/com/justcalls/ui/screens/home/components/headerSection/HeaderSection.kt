@@ -27,11 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.justcalls.data.network.ApiClient
 import com.justcalls.data.network.AuthService
-import com.justcalls.data.storage.TokenStorage
 import com.justcalls.ui.components.common.IconPressableButton
 import com.justcalls.ui.theme.AppColors
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
 fun HeaderSection(
@@ -41,33 +38,31 @@ fun HeaderSection(
     onUnauthorized: () -> Unit = {}
 ) {
     var displayName by remember { mutableStateOf<String?>(null) }
-    val tokenStorage = remember { TokenStorage() }
-    val finalApiClient = apiClient ?: remember { ApiClient(tokenStorage) }
-    val finalAuthService = authService ?: remember { AuthService(finalApiClient, tokenStorage) }
     
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.Main) {
-            val result = finalAuthService.getUser()
-            result.fold(
-                onSuccess = { apiResult ->
-                    if (apiResult.success && apiResult.data != null) {
-                        displayName = apiResult.data.displayName
-                    } else {
-                        if (apiResult.error?.code == "UNAUTHORIZED") {
-                            tokenStorage.clearTokens()
-                            onUnauthorized()
-                        }
-                    }
-                },
-                onFailure = { exception ->
-                    val message = exception.message ?: ""
-                    if (message.contains("401") || message.contains("Unauthorized")) {
-                        tokenStorage.clearTokens()
+    val finalApiClient = apiClient
+    val finalAuthService = authService
+    
+    LaunchedEffect(finalApiClient, finalAuthService) {
+        if (finalApiClient == null || finalAuthService == null) return@LaunchedEffect
+        
+        val result = finalAuthService.getUser()
+        result.fold(
+            onSuccess = { apiResult ->
+                if (apiResult.success && apiResult.data != null) {
+                    displayName = apiResult.data.displayName
+                } else {
+                    if (apiResult.error?.code == "UNAUTHORIZED") {
                         onUnauthorized()
                     }
                 }
-            )
-        }
+            },
+            onFailure = { exception ->
+                val message = exception.message ?: ""
+                if (message.contains("401") || message.contains("Unauthorized")) {
+                    onUnauthorized()
+                }
+            }
+        )
     }
     
     val userName = displayName ?: "Пользователь"

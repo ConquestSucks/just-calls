@@ -27,8 +27,12 @@ class AuthService(
     private val tokenStorage: TokenStorage
 ) {
     private suspend fun <T> executeWithTokenRefresh(
+        requestName: String,
         request: suspend () -> Result<ApiResult<T>>
     ): Result<ApiResult<T>> {
+        val currentAccessToken = tokenStorage.getAccessToken()
+        val currentRefreshToken = tokenStorage.getRefreshToken()
+        
         val result = request()
         
         var shouldRefresh = false
@@ -40,8 +44,11 @@ class AuthService(
                 }
             },
             onFailure = { exception ->
-                if (exception is ClientRequestException && exception.response.status == HttpStatusCode.Unauthorized) {
-                    shouldRefresh = true
+                if (exception is ClientRequestException) {
+                    val status = exception.response.status
+                    if (status == HttpStatusCode.Unauthorized) {
+                        shouldRefresh = true
+                    }
                 } else {
                     val message = exception.message ?: ""
                     if (message.contains("401") || message.contains("Unauthorized")) {
@@ -56,11 +63,11 @@ class AuthService(
             refreshResult.fold(
                 onSuccess = { refreshResponse ->
                     if (refreshResponse.success && refreshResponse.data != null) {
-                        return request()
+                        val retryResult = request()
+                        return retryResult
                     }
                 },
-                onFailure = {
-                }
+                onFailure = { }
             )
         }
         
@@ -92,62 +99,36 @@ class AuthService(
     
     suspend fun signIn(request: SignInRequest): Result<ApiResult<SignInResponse>> {
         return try {
-            println("[AuthService] signIn - Отправка запроса на ${apiClient.baseUrl}/auth/signIn")
-            
             val httpResponse: HttpResponse = apiClient.client.post("${apiClient.baseUrl}/auth/signIn") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 setBody(request)
             }
-            val setCookieHeaders = httpResponse.headers.getAll(HttpHeaders.SetCookie)
-            println("[AuthService] signIn - HTTP статус: ${httpResponse.status}")
-            println("[AuthService] signIn - Set-Cookie заголовки: $setCookieHeaders")
             
             val response = httpResponse.body<ApiResult<SignInResponse>>()
             
-            println("[AuthService] signIn - Ответ получен: success=${response.success}")
-            
             if (response.success && response.data != null) {
                 tokenStorage.saveAccessToken(response.data.accessToken)
-                println("[AuthService] signIn - Access token сохранен")
             }
             
             Result.success(response)
         } catch (e: Exception) {
-            println("[AuthService] signIn - Ошибка: ${e.message}")
-            e.printStackTrace()
             Result.failure(e)
         }
     }
     
     suspend fun refresh(): Result<ApiResult<RefreshTokenResponse>> {
         return try {
-            println("[AuthService] refresh - Отправка запроса на ${apiClient.baseUrl}/auth/refresh")
-            println("[AuthService] refresh - Cookies будут отправлены автоматически через HttpCookies плагин")
-            
             val httpResponse: HttpResponse = apiClient.client.post("${apiClient.baseUrl}/auth/refresh") {
             }
-            val setCookieHeaders = httpResponse.headers.getAll(HttpHeaders.SetCookie)
-
-            val requestCookieHeader = httpResponse.call.request.headers[HttpHeaders.Cookie]
-            println("[AuthService] refresh - HTTP статус: ${httpResponse.status}")
-            println("[AuthService] refresh - Request Cookie header: $requestCookieHeader")
-            println("[AuthService] refresh - Set-Cookie заголовки: $setCookieHeaders")
             
             val response = httpResponse.body<ApiResult<RefreshTokenResponse>>()
             
-            println("[AuthService] refresh - Ответ получен: success=${response.success}, error=${response.error?.code}, message=${response.error?.message}")
-            
             if (response.success && response.data != null) {
                 tokenStorage.saveAccessToken(response.data.accessToken)
-                println("[AuthService] refresh - Новый access token сохранен")
-            } else {
-                println("[AuthService] refresh - Ошибка обновления токена: ${response.error?.message}")
             }
             
             Result.success(response)
         } catch (e: Exception) {
-            println("[AuthService] refresh - Исключение: ${e.message}")
-            e.printStackTrace()
             Result.failure(e)
         }
     }
@@ -155,11 +136,15 @@ class AuthService(
     suspend fun logout(): Result<ApiResult<Unit>> {
         return try {
             val authHeader = apiClient.getAuthHeader()
-            val response = apiClient.client.post("${apiClient.baseUrl}/auth/logout") {
+            val url = "${apiClient.baseUrl}/auth/logout"
+            
+            val httpResponse: HttpResponse = apiClient.client.post(url) {
                 if (authHeader != null) {
                     header(HttpHeaders.Authorization, authHeader)
                 }
-            }.body<ApiResult<Unit>>()
+            }
+            
+            val response = httpResponse.body<ApiResult<Unit>>()
             
             if (response.success) {
                 tokenStorage.clearTokens()
@@ -173,14 +158,18 @@ class AuthService(
     }
     
     suspend fun getUser(): Result<ApiResult<UserResponse>> {
-        return executeWithTokenRefresh {
+        return executeWithTokenRefresh("getUser") {
             try {
                 val authHeader = apiClient.getAuthHeader()
-                val response = apiClient.client.get("${apiClient.baseUrl}/user") {
+                val url = "${apiClient.baseUrl}/user"
+                
+                val httpResponse: HttpResponse = apiClient.client.get(url) {
                     if (authHeader != null) {
                         header(HttpHeaders.Authorization, authHeader)
                     }
-                }.body<ApiResult<UserResponse>>()
+                }
+                
+                val response = httpResponse.body<ApiResult<UserResponse>>()
                 
                 Result.success(response)
             } catch (e: Exception) {
@@ -190,16 +179,20 @@ class AuthService(
     }
     
     suspend fun updateUser(request: UpdateUserRequest): Result<ApiResult<UserResponse>> {
-        return executeWithTokenRefresh {
+        return executeWithTokenRefresh("updateUser") {
             try {
                 val authHeader = apiClient.getAuthHeader()
-                val response = apiClient.client.put("${apiClient.baseUrl}/user") {
+                val url = "${apiClient.baseUrl}/user"
+                
+                val httpResponse: HttpResponse = apiClient.client.put(url) {
                     if (authHeader != null) {
                         header(HttpHeaders.Authorization, authHeader)
                     }
                     header(HttpHeaders.ContentType, ContentType.Application.Json)
                     setBody(request)
-                }.body<ApiResult<UserResponse>>()
+                }
+                
+                val response = httpResponse.body<ApiResult<UserResponse>>()
                 
                 Result.success(response)
             } catch (e: Exception) {
@@ -208,4 +201,3 @@ class AuthService(
         }
     }
 }
-

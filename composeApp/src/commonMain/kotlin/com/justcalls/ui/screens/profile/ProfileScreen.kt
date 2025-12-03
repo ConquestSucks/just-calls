@@ -41,14 +41,22 @@ import kotlinx.coroutines.launch
 fun ProfileScreen(
     apiClient: ApiClient? = null,
     authService: AuthService? = null,
+    tokenStorage: TokenStorage? = null,
     onBackClick: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
-    val tokenStorage = remember { TokenStorage() }
-    val finalApiClient = apiClient ?: remember { ApiClient(tokenStorage) }
-    val finalAuthService = authService ?: remember { AuthService(finalApiClient, tokenStorage) }
+    val finalTokenStorage = tokenStorage ?: remember { TokenStorage() }
+    val finalApiClient = apiClient
+    val finalAuthService = authService
+    
     val coroutineScope = rememberCoroutineScope()
-    val profileHandler = remember { ProfileHandler(finalAuthService, tokenStorage, onLogout, coroutineScope) }
+    val profileHandler = remember(finalApiClient, finalAuthService, finalTokenStorage, onLogout, coroutineScope) {
+        if (finalApiClient != null && finalAuthService != null) {
+            ProfileHandler(finalAuthService, finalTokenStorage, onLogout, coroutineScope)
+        } else {
+            null
+        }
+    }
     
     var isEditMode by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
@@ -62,12 +70,13 @@ fun ProfileScreen(
     var originalDisplayName by remember { mutableStateOf("") }
     var createdAt by remember { mutableStateOf<String?>(null) }
     
-    LaunchedEffect(Unit) {
+    LaunchedEffect(profileHandler) {
+        val handler = profileHandler ?: return@LaunchedEffect
         isLoading = true
         errorMessage = null
         profileLoadError = null
         
-        profileHandler.loadProfile(
+        handler.loadProfile(
             onSuccess = { profileData ->
                 isLoading = false
                 userId = profileData.userId
@@ -89,10 +98,11 @@ fun ProfileScreen(
     }
     
     fun handleSave() {
+        val handler = profileHandler ?: return
         isSaving = true
         errorMessage = null
         
-        profileHandler.saveProfile(
+        handler.saveProfile(
             displayName = displayName,
             onSuccess = {
                 isSaving = false
@@ -149,7 +159,7 @@ fun ProfileScreen(
                             onLogoutClick = {
                                 coroutineScope.launch {
                                     try {
-                                        finalAuthService.logout()
+                                        finalAuthService?.logout()
                                     } catch (_: Exception) {
                                     }
                                     onLogout()

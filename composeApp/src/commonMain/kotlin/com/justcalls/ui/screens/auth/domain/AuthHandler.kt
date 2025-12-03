@@ -37,7 +37,7 @@ class AuthHandler(
                 result.fold(
                     onSuccess = { apiResult ->
                         if (apiResult.success && apiResult.data != null) {
-                            onAuthSuccess()
+            onAuthSuccess()
                         } else {
                             state.errorMessage = apiResult.error?.message ?: "Ошибка входа"
                         }
@@ -73,7 +73,7 @@ class AuthHandler(
                             onSuccess = { apiResult ->
                                 if (apiResult.success && apiResult.data != null) {
                                     state.registrationGuid = apiResult.data.guid
-                                    state.registerStep = RegisterStep.VERIFICATION_CODE
+                    state.registerStep = RegisterStep.VERIFICATION_CODE
                                 } else {
                                     state.errorMessage = apiResult.error?.message ?: "Ошибка регистрации"
                                 }

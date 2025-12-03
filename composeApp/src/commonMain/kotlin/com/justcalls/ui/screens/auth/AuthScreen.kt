@@ -55,95 +55,95 @@ fun AuthScreen(
             color = AppColors.Surface
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
                         .padding(horizontal = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                     Spacer(modifier = Modifier.height(80.dp))
-                    
-                    AuthHeader()
-                    
+                
+                AuthHeader()
+                
                     Spacer(modifier = Modifier.height(48.dp))
-                    
-                    AuthTabs(
-                        selectedTab = state.selectedTab,
-                        onTabSelected = { state.selectedTab = it }
-                    )
-                    
+                
+                AuthTabs(
+                    selectedTab = state.selectedTab,
+                    onTabSelected = { state.selectedTab = it }
+                )
+                
                     Spacer(modifier = Modifier.height(36.dp))
-                    
-                    if (state.selectedTab == AuthTab.REGISTER) {
-                        StepIndicator(
-                            currentStep = when (state.registerStep) {
-                                RegisterStep.EMAIL -> 1
-                                RegisterStep.VERIFICATION_CODE -> 2
-                                RegisterStep.PASSWORD -> 3
-                            },
-                            totalSteps = 3
-                        )
+                
+                if (state.selectedTab == AuthTab.REGISTER) {
+                    StepIndicator(
+                        currentStep = when (state.registerStep) {
+                            RegisterStep.EMAIL -> 1
+                            RegisterStep.VERIFICATION_CODE -> 2
+                            RegisterStep.PASSWORD -> 3
+                        },
+                        totalSteps = 3
+                    )
                         Spacer(modifier = Modifier.height(24.dp))
+                }
+                
+                when (state.selectedTab) {
+                    AuthTab.LOGIN -> {
+                        LoginForm(
+                            email = state.loginEmail,
+                            password = state.loginPassword,
+                            emailError = state.loginEmailError,
+                            passwordError = state.loginPasswordError,
+                            onEmailChange = { 
+                                state.loginEmail = it
+                                state.loginEmailError = null
+                            },
+                            onPasswordChange = { 
+                                state.loginPassword = it
+                                state.loginPasswordError = null
+                            }
+                        )
                     }
-                    
-                    when (state.selectedTab) {
-                        AuthTab.LOGIN -> {
-                            LoginForm(
-                                email = state.loginEmail,
-                                password = state.loginPassword,
-                                emailError = state.loginEmailError,
-                                passwordError = state.loginPasswordError,
-                                onEmailChange = { 
-                                    state.loginEmail = it
-                                    state.loginEmailError = null
-                                },
-                                onPasswordChange = { 
-                                    state.loginPassword = it
-                                    state.loginPasswordError = null
-                                }
-                            )
-                        }
-                        AuthTab.REGISTER -> {
-                            RegisterForm(
-                                step = state.registerStep,
-                                email = state.registerEmail,
-                                verificationCode = state.verificationCode,
-                                password = state.registerPassword,
-                                confirmPassword = state.confirmPassword,
-                                emailError = state.registerEmailError,
-                                verificationCodeError = state.verificationCodeError,
-                                passwordError = state.registerPasswordError,
-                                confirmPasswordError = state.confirmPasswordError,
-                                onEmailChange = { 
-                                    state.registerEmail = it
-                                    state.registerEmailError = null
-                                },
-                                onVerificationCodeChange = { 
-                                    state.verificationCode = it
-                                    state.verificationCodeError = null
-                                },
-                                onPasswordChange = { 
-                                    state.registerPassword = it
-                                    state.registerPasswordError = null
-                                },
-                                onConfirmPasswordChange = { 
-                                    state.confirmPassword = it
-                                    state.confirmPasswordError = null
-                                }
-                            )
-                        }
+                    AuthTab.REGISTER -> {
+                        RegisterForm(
+                            step = state.registerStep,
+                            email = state.registerEmail,
+                            verificationCode = state.verificationCode,
+                            password = state.registerPassword,
+                            confirmPassword = state.confirmPassword,
+                            emailError = state.registerEmailError,
+                            verificationCodeError = state.verificationCodeError,
+                            passwordError = state.registerPasswordError,
+                            confirmPasswordError = state.confirmPasswordError,
+                            onEmailChange = { 
+                                state.registerEmail = it
+                                state.registerEmailError = null
+                            },
+                            onVerificationCodeChange = { 
+                                state.verificationCode = it
+                                state.verificationCodeError = null
+                            },
+                            onPasswordChange = { 
+                                state.registerPassword = it
+                                state.registerPasswordError = null
+                            },
+                            onConfirmPasswordChange = { 
+                                state.confirmPassword = it
+                                state.confirmPasswordError = null
+                            }
+                        )
                     }
-                    
-                    Spacer(modifier = Modifier.weight(1f))
+                }
+                
+                Spacer(modifier = Modifier.weight(1f))
                     
                     ErrorMessage(message = state.errorMessage)
-                    
-                    SubmitButton(
-                        tab = state.selectedTab,
-                        registerStep = state.registerStep,
-                        onClick = { handler.handleSubmit() }
-                    )
-                    
+                
+                SubmitButton(
+                    tab = state.selectedTab,
+                    registerStep = state.registerStep,
+                    onClick = { handler.handleSubmit() }
+                )
+                
                     Spacer(modifier = Modifier.height(32.dp))
                 }
                 

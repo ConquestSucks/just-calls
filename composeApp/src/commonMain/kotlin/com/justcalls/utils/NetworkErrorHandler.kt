@@ -12,21 +12,15 @@ object NetworkErrorHandler {
             is SocketTimeoutException -> {
                 "Превышено время ожидания ответа от сервера. Попробуйте позже."
             }
-            is java.net.SocketTimeoutException -> {
-                "Превышено время ожидания подключения. Проверьте интернет-соединение."
-            }
-            is java.net.UnknownHostException -> {
-                "Не удалось найти сервер. Проверьте интернет-соединение."
-            }
-            is java.net.ConnectException -> {
-                "Не удалось подключиться к серверу. Проверьте интернет-соединение."
-            }
             else -> {
                 val message = exception.message ?: "Неизвестная ошибка"
-                if (message.contains("timeout", ignoreCase = true)) {
+                val exceptionName = exception::class.simpleName ?: ""
+                if (message.contains("timeout", ignoreCase = true) || exceptionName.contains("Timeout", ignoreCase = true)) {
                     "Превышено время ожидания. Проверьте интернет-соединение."
-                } else if (message.contains("connect", ignoreCase = true)) {
+                } else if (message.contains("connect", ignoreCase = true) || exceptionName.contains("Connect", ignoreCase = true)) {
                     "Не удалось подключиться к серверу. Проверьте интернет-соединение."
+                } else if (message.contains("host", ignoreCase = true) || exceptionName.contains("Host", ignoreCase = true)) {
+                    "Не удалось найти сервер. Проверьте интернет-соединение."
                 } else {
                     "Ошибка подключения к серверу: $message"
                 }

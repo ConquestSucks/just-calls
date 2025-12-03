@@ -8,8 +8,6 @@ import com.justcalls.utils.NetworkErrorHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 
 class ProfileHandler(
     private val authService: AuthService,
@@ -23,11 +21,7 @@ class ProfileHandler(
         onTimeout: (String) -> Unit
     ) {
         try {
-            val result = withTimeout(5000L) {
-                withContext(Dispatchers.Main) {
-                    authService.getUser()
-                }
-            }
+            val result = authService.getUser()
             
             result.fold(
                 onSuccess = { apiResult ->
@@ -48,15 +42,29 @@ class ProfileHandler(
                     }
                 },
                 onFailure = { exception ->
-                    if (!AuthErrorHandler.handleUnauthorizedException(exception, tokenStorage, onLogout)) {
-                        onError(NetworkErrorHandler.getErrorMessage(exception))
+                    val isTimeout = exception is kotlinx.coroutines.TimeoutCancellationException || 
+                                   exception.message?.contains("timeout", ignoreCase = true) == true ||
+                                   exception.message?.contains("Timed out", ignoreCase = true) == true
+                    
+                    if (isTimeout) {
+                        onTimeout("Превышено время ожидания загрузки профиля")
+                    } else {
+                        if (!AuthErrorHandler.handleUnauthorizedException(exception, tokenStorage, onLogout)) {
+                            onError(NetworkErrorHandler.getErrorMessage(exception))
+                        }
                     }
                 }
             )
-        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-            onTimeout("Превышено время ожидания загрузки профиля")
         } catch (e: Exception) {
-            onError(e.message ?: "Ошибка при загрузке профиля")
+            val isTimeout = e is kotlinx.coroutines.TimeoutCancellationException || 
+                           e.message?.contains("timeout", ignoreCase = true) == true ||
+                           e.message?.contains("Timed out", ignoreCase = true) == true
+            
+            if (isTimeout) {
+                onTimeout("Превышено время ожидания загрузки профиля")
+            } else {
+                onError(e.message ?: "Ошибка при загрузке профиля")
+            }
         }
     }
     
