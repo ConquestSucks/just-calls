@@ -12,8 +12,7 @@ struct iOSApp: App {
 
 struct ComposeViewController: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        // Используем объект MainViewControllerFactory
-        return ComposeApp.MainViewControllerFactory.create()
+        return ComposeApp.MainViewControllerFactory.shared.create()
     }
     
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
