@@ -43,7 +43,8 @@ fun PasswordField(
     value: String,
     onValueChange: (String) -> Unit,
     errorMessage: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
     
@@ -86,7 +87,7 @@ fun PasswordField(
                 ) {
                     BasicTextField(
                         value = value,
-                        onValueChange = onValueChange,
+                        onValueChange = { if (enabled) onValueChange(it) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 20.dp),

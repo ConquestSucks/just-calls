@@ -27,7 +27,8 @@ fun VerificationCodeField(
     value: String,
     onValueChange: (String) -> Unit,
     errorMessage: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     ColumnWithLabel(
         label = "Код подтверждения *",
@@ -57,7 +58,7 @@ fun VerificationCodeField(
                 BasicTextField(
                     value = value,
                     onValueChange = { newValue ->
-                        if (newValue.all { it.isDigit() } && newValue.length <= 6) {
+                        if (enabled && newValue.all { it.isDigit() } && newValue.length <= 6) {
                             onValueChange(newValue)
                         }
                     },

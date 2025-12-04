@@ -16,7 +16,8 @@ fun LoginForm(
     emailError: String?,
     passwordError: String?,
     onEmailChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit
+    onPasswordChange: (String) -> Unit,
+    enabled: Boolean = true
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -25,12 +26,14 @@ fun LoginForm(
         EmailField(
             value = email,
             onValueChange = onEmailChange,
-            errorMessage = emailError
+            errorMessage = emailError,
+            enabled = enabled
         )
         PasswordField(
             value = password,
             onValueChange = onPasswordChange,
-            errorMessage = passwordError
+            errorMessage = passwordError,
+            enabled = enabled
         )
     }
 }

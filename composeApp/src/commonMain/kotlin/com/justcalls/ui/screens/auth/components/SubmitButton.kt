@@ -29,7 +29,8 @@ import com.justcalls.ui.screens.auth.domain.RegisterStep
 fun SubmitButton(
     tab: AuthTab,
     registerStep: RegisterStep,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -50,6 +51,7 @@ fun SubmitButton(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
+                enabled = enabled,
                 onClick = onClick
             ),
         contentAlignment = Alignment.Center

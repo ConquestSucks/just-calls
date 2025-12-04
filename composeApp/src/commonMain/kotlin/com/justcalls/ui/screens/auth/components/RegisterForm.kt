@@ -26,7 +26,8 @@ fun RegisterForm(
     onEmailChange: (String) -> Unit,
     onVerificationCodeChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onConfirmPasswordChange: (String) -> Unit
+    onConfirmPasswordChange: (String) -> Unit,
+    enabled: Boolean = true
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -37,27 +38,31 @@ fun RegisterForm(
                 EmailField(
                     value = email,
                     onValueChange = onEmailChange,
-                    errorMessage = emailError
+                    errorMessage = emailError,
+                    enabled = enabled
                 )
             }
             RegisterStep.VERIFICATION_CODE -> {
                 VerificationCodeField(
                     value = verificationCode,
                     onValueChange = onVerificationCodeChange,
-                    errorMessage = verificationCodeError
+                    errorMessage = verificationCodeError,
+                    enabled = enabled
                 )
             }
             RegisterStep.PASSWORD -> {
                 PasswordField(
                     value = password,
                     onValueChange = onPasswordChange,
-                    errorMessage = passwordError
+                    errorMessage = passwordError,
+                    enabled = enabled
                 )
                 ConfirmPasswordField(
                     value = confirmPassword,
                     onValueChange = onConfirmPasswordChange,
                     password = password,
-                    errorMessage = confirmPasswordError
+                    errorMessage = confirmPasswordError,
+                    enabled = enabled
                 )
             }
         }

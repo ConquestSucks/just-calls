@@ -33,7 +33,8 @@ fun EmailField(
     value: String,
     onValueChange: (String) -> Unit,
     errorMessage: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     ColumnWithLabel(
         label = "Email *",
@@ -74,7 +75,7 @@ fun EmailField(
                 ) {
                     BasicTextField(
                         value = value,
-                        onValueChange = onValueChange,
+                        onValueChange = { if (enabled) onValueChange(it) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 20.dp),

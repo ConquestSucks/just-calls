@@ -100,7 +100,8 @@ fun AuthScreen(
                             onPasswordChange = { 
                                 state.loginPassword = it
                                 state.loginPasswordError = null
-                            }
+                            },
+                            enabled = !state.isLoading
                         )
                     }
                     AuthTab.REGISTER -> {
@@ -129,7 +130,8 @@ fun AuthScreen(
                             onConfirmPasswordChange = { 
                                 state.confirmPassword = it
                                 state.confirmPasswordError = null
-                            }
+                            },
+                            enabled = !state.isLoading
                         )
                     }
                 }
@@ -141,7 +143,8 @@ fun AuthScreen(
                 SubmitButton(
                     tab = state.selectedTab,
                     registerStep = state.registerStep,
-                    onClick = { handler.handleSubmit() }
+                    onClick = { handler.handleSubmit() },
+                    enabled = !state.isLoading
                 )
                 
                     Spacer(modifier = Modifier.height(32.dp))
