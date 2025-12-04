@@ -5,7 +5,16 @@ import ComposeApp
 struct iOSApp: App {
     var body: some Scene {
         WindowGroup {
-            MainViewController()
+            ComposeViewController()
         }
+    }
+}
+
+struct ComposeViewController: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        return MainViewController()
+    }
+    
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
     }
 }
