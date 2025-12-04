@@ -2,4 +2,6 @@ package com.justcalls
 
 import androidx.compose.ui.window.ComposeUIViewController
 
-fun MainViewController() = ComposeUIViewController { App() }
+object MainViewControllerFactory {
+    fun create() = ComposeUIViewController { App() }
+}

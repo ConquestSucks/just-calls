@@ -12,8 +12,8 @@ struct iOSApp: App {
 
 struct ComposeViewController: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        // В Kotlin/Native функции верхнего уровня экспортируются с суффиксом Kt
-        return ComposeAppKt.MainViewController()
+        // Используем объект MainViewControllerFactory
+        return ComposeApp.MainViewControllerFactory.create()
     }
     
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
