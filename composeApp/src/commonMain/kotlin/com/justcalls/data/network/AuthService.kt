@@ -10,6 +10,7 @@ import com.justcalls.data.models.responses.SignInResponse
 import com.justcalls.data.models.responses.SignUpResponse
 import com.justcalls.data.models.responses.UserResponse
 import com.justcalls.data.storage.TokenStorage
+import kotlinx.serialization.SerializationException
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.get
@@ -21,6 +22,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import kotlinx.serialization.json.Json
 
 class AuthService(
     private val apiClient: ApiClient,
@@ -75,11 +77,40 @@ class AuthService(
     }
     suspend fun signUp(request: SignUpRequest): Result<ApiResult<SignUpResponse>> {
         return try {
-            val response = apiClient.client.post("${apiClient.baseUrl}/auth/signUp") {
+            val httpResponse = apiClient.client.post("${apiClient.baseUrl}/auth/signUp") {
                 header(HttpHeaders.ContentType, ContentType.Application.Json)
                 setBody(request)
-            }.body<ApiResult<SignUpResponse>>()
-            Result.success(response)
+            }
+            
+            if (httpResponse.status.value in 200..299) {
+                try {
+                    val response = httpResponse.body<ApiResult<SignUpResponse>>()
+                    Result.success(response)
+                } catch (e: SerializationException) {
+                    val errorMessage = e.message ?: ""
+                    val guidPattern = Regex("""([a-f0-9]{8}[-]?[a-f0-9]{4}[-]?[a-f0-9]{4}[-]?[a-f0-9]{4}[-]?[a-f0-9]{12})""", RegexOption.IGNORE_CASE)
+                    val guidMatch = guidPattern.find(errorMessage)
+                    
+                    if (guidMatch != null) {
+                        var guid = guidMatch.groupValues[1]
+                        guid = guid.replace("-", "").chunked(8).joinToString("-") { it }
+                        Result.success(ApiResult(
+                            success = true,
+                            data = SignUpResponse(guid = guid),
+                            error = null
+                        ))
+                    } else {
+                        Result.failure(e)
+                    }
+                }
+            } else {
+                try {
+                    val response = httpResponse.body<ApiResult<SignUpResponse>>()
+                    Result.success(response)
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
