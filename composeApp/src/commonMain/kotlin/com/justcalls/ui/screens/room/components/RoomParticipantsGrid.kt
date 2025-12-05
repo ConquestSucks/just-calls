@@ -57,18 +57,19 @@ fun RoomParticipantsGrid(
                 }
                 
                 LaunchedEffect(liveKitParticipant.identity, liveKitParticipant.isCameraEnabled) {
-                    println("[RoomParticipantsGrid] LaunchedEffect для участника ${liveKitParticipant.identity}, isCameraEnabled=${liveKitParticipant.isCameraEnabled}")
+                    println("[RoomParticipantsGrid] LaunchedEffect для участника ${liveKitParticipant.identity}, isCameraEnabled=${liveKitParticipant.isCameraEnabled}, isLocal=${liveKitParticipant.isLocal}")
                     if (liveKitParticipant.isCameraEnabled) {
                         println("[RoomParticipantsGrid] Запрашиваем видео поверхность для ${liveKitParticipant.identity}")
                         var attempts = 0
-                        while (attempts < 5 && videoSurface == null) {
-                            videoSurface = liveKitManager.getVideoSurface(liveKitParticipant.identity)
-                            if (videoSurface == null) {
-                                kotlinx.coroutines.delay(300)
-                                attempts++
-                            } else {
-                                println("[RoomParticipantsGrid] Получена видео поверхность для ${liveKitParticipant.identity} с попытки $attempts: $videoSurface")
+                        while (attempts < 15) {
+                            val surface = liveKitManager.getVideoSurface(liveKitParticipant.identity)
+                            if (surface != null) {
+                                videoSurface = surface
+                                println("[RoomParticipantsGrid] Получена видео поверхность для ${liveKitParticipant.identity} с попытки $attempts: $surface")
                                 break
+                            } else {
+                                kotlinx.coroutines.delay(200)
+                                attempts++
                             }
                         }
                         if (videoSurface == null) {

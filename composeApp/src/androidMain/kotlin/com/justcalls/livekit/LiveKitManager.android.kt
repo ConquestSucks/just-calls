@@ -116,16 +116,38 @@ actual class LiveKitManager {
                 try {
                     room?.localParticipant?.setCameraEnabled(enabled)
                     
-                    kotlinx.coroutines.delay(500)
-                    
                     if (!enabled) {
                         val localIdentity = room?.localParticipant?.identity?.toString()
                         localIdentity?.let { localVideoTracks.remove(it) }
-                    } else {
                         updateParticipants()
+                    } else {
+                        // После включения камеры ждём, пока трек станет доступен
+                        val localIdentity = room?.localParticipant?.identity?.toString()
+                        var attempts = 0
+                        while (attempts < 15) {
+                            kotlinx.coroutines.delay(200)
+                            updateParticipants()
+                            
+                            // Пытаемся получить трек
+                            val localParticipant = room?.localParticipant
+                            val localVideoTrack = localParticipant?.videoTrackPublications?.let { pubs ->
+                                VideoTrackExtractor.extractLocalVideoTrack(pubs, localIdentity ?: "")
+                            }
+                            
+                            if (localVideoTrack != null && localIdentity != null) {
+                                localVideoTracks[localIdentity] = localVideoTrack
+                                println("[LiveKitManager] Локальный видео трек получен после включения камеры: $localIdentity, track=$localVideoTrack")
+                                updateParticipants()
+                                break
+                            }
+                            attempts++
+                        }
+                        
+                        if (attempts >= 15) {
+                            println("[LiveKitManager] Не удалось получить локальный видео трек после включения камеры")
+                            updateParticipants()
+                        }
                     }
-                    
-                    updateParticipants()
                 } catch (e: Exception) {
                     println("[LiveKitManager] Ошибка setCameraEnabled: ${e.message}")
                     e.printStackTrace()
@@ -152,11 +174,13 @@ actual class LiveKitManager {
         try {
             val localIdentity = currentRoom.localParticipant?.identity?.toString()
             if (participantId == localIdentity) {
+                // Сначала проверяем сохранённый трек
                 localVideoTracks[participantId]?.let {
                     println("[LiveKitManager] Используем сохранённый локальный видео трек для участника: $participantId")
                     return "local:$participantId"
                 }
                 
+                // Если трек не сохранён, пытаемся получить его из публикаций
                 val localParticipant = currentRoom.localParticipant
                 println("[LiveKitManager] Локальный участник: получение видео трека")
                 println("[LiveKitManager] Количество публикаций: ${localParticipant?.videoTrackPublications?.size ?: 0}")
@@ -171,6 +195,19 @@ actual class LiveKitManager {
                     return "local:$participantId"
                 } else {
                     println("[LiveKitManager] Локальный видео трек не найден для $participantId, публикаций: ${localParticipant?.videoTrackPublications?.size ?: 0}")
+                    // Если трек не найден, но камера включена, возвращаем поверхность для повторных попыток
+                    val isCameraEnabled = localParticipant?.videoTrackPublications?.let { pubs ->
+                        when {
+                            pubs is Collection<*> -> (pubs as Collection<*>).isNotEmpty()
+                            pubs is Map<*, *> -> (pubs as Map<*, *>).isNotEmpty()
+                            else -> false
+                        }
+                    } ?: false
+                    
+                    if (isCameraEnabled) {
+                        println("[LiveKitManager] Камера включена, но трек ещё не доступен, возвращаем поверхность для повторных попыток")
+                        return "local:$participantId"
+                    }
                 }
             } else {
                 val remoteParticipant = currentRoom.remoteParticipants.values.find { participant -> 
@@ -210,11 +247,53 @@ actual class LiveKitManager {
     }
     
     fun getLocalVideoTrack(participantId: String): LocalVideoTrack? {
-        return localVideoTracks[participantId]
+        // Сначала проверяем сохранённый трек
+        localVideoTracks[participantId]?.let {
+            println("[LiveKitManager] getLocalVideoTrack: возвращаем сохранённый трек для $participantId")
+            return it
+        }
+        
+        // Если трек не сохранён, пытаемся получить его из публикаций
+        val localParticipant = room?.localParticipant
+        if (localParticipant != null) {
+            println("[LiveKitManager] getLocalVideoTrack: пытаемся получить трек из публикаций для $participantId")
+            
+            // Пытаемся получить трек напрямую из LocalParticipant
+            try {
+                val cameraVideoTrackMethod = localParticipant.javaClass.getMethod("cameraVideoTrack")
+                val cameraTrack = cameraVideoTrackMethod.invoke(localParticipant) as? LocalVideoTrack
+                if (cameraTrack != null) {
+                    println("[LiveKitManager] getLocalVideoTrack: получен трек через cameraVideoTrack()")
+                    localVideoTracks[participantId] = cameraTrack
+                    return cameraTrack
+                }
+            } catch (e: Exception) {
+                println("[LiveKitManager] getLocalVideoTrack: cameraVideoTrack() не доступен: ${e.message}")
+            }
+            
+            // Fallback: получаем трек из публикаций
+            val localVideoTrack = localParticipant.videoTrackPublications?.let { pubs ->
+                VideoTrackExtractor.extractLocalVideoTrack(pubs, participantId)
+            }
+            
+            if (localVideoTrack != null) {
+                localVideoTracks[participantId] = localVideoTrack
+                println("[LiveKitManager] getLocalVideoTrack: сохранён трек для $participantId")
+                return localVideoTrack
+            } else {
+                println("[LiveKitManager] getLocalVideoTrack: трек не найден в публикациях для $participantId")
+            }
+        }
+        
+        return null
     }
     
     actual fun getEglBaseContext(): Any? {
         return eglContextManager.getContext()
+    }
+    
+    fun getRoom(): Room? {
+        return room
     }
     
     private fun updateParticipants() {

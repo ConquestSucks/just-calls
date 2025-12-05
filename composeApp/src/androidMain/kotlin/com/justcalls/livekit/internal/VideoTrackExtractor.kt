@@ -33,16 +33,26 @@ internal object VideoTrackExtractor {
         publications: Any?,
         participantId: String
     ): LocalVideoTrack? {
-        if (publications == null) return null
+        if (publications == null) {
+            println("[VideoTrackExtractor] extractLocalVideoTrack: publications is null")
+            return null
+        }
+        
+        println("[VideoTrackExtractor] extractLocalVideoTrack: тип публикаций=${publications.javaClass.name}")
         
         return try {
             when {
                 publications is Collection<*> -> {
+                    println("[VideoTrackExtractor] Публикации - Collection, размер=${publications.size}")
                     val first = publications.firstOrNull()
+                    println("[VideoTrackExtractor] Первый элемент: ${first?.javaClass?.name}")
+                    
                     when {
                         first is Pair<*, *> -> {
                             val pairFirst = first.first
                             val pairSecond = first.second
+                            
+                            println("[VideoTrackExtractor] Первый элемент - Pair: first=${pairFirst?.javaClass?.name}, second=${pairSecond?.javaClass?.name}")
                             
                             when {
                                 pairSecond is LocalVideoTrack -> {
@@ -54,24 +64,51 @@ internal object VideoTrackExtractor {
                                     pairFirst
                                 }
                                 else -> {
-                                    val publication = pairFirst
+                                    // Пытаемся извлечь трек из публикации
+                                    val publication = when {
+                                        pairFirst is LocalTrackPublication -> pairFirst
+                                        pairSecond is LocalTrackPublication -> pairSecond
+                                        pairFirst != null -> pairFirst
+                                        pairSecond != null -> pairSecond
+                                        else -> null
+                                    }
+                                    
                                     if (publication != null) {
+                                        println("[VideoTrackExtractor] Извлекаем трек из публикации: ${publication.javaClass.name}")
                                         getTrackFromPublication(publication) as? LocalVideoTrack
-                                    } else null
+                                    } else {
+                                        println("[VideoTrackExtractor] Публикация не найдена в Pair")
+                                        null
+                                    }
                                 }
                             }
                         }
                         else -> {
                             val publication = first
+                            println("[VideoTrackExtractor] Первый элемент не Pair: ${publication?.javaClass?.name}")
                             when {
-                                publication is LocalVideoTrack -> publication
-                                publication != null -> getTrackFromPublication(publication) as? LocalVideoTrack
-                                else -> null
+                                publication is LocalVideoTrack -> {
+                                    println("[VideoTrackExtractor] Первый элемент - это LocalVideoTrack")
+                                    publication
+                                }
+                                publication is LocalTrackPublication -> {
+                                    println("[VideoTrackExtractor] Первый элемент - это LocalTrackPublication, извлекаем трек")
+                                    getTrackFromPublication(publication) as? LocalVideoTrack
+                                }
+                                publication != null -> {
+                                    println("[VideoTrackExtractor] Первый элемент - неизвестный тип, пытаемся извлечь трек")
+                                    getTrackFromPublication(publication) as? LocalVideoTrack
+                                }
+                                else -> {
+                                    println("[VideoTrackExtractor] Первый элемент null")
+                                    null
+                                }
                             }
                         }
                     }
                 }
                 publications is Map<*, *> -> {
+                    println("[VideoTrackExtractor] Публикации - Map, размер=${publications.size}")
                     val firstValue = publications.values.firstOrNull()
                     when {
                         firstValue is LocalVideoTrack -> firstValue
@@ -80,6 +117,7 @@ internal object VideoTrackExtractor {
                     }
                 }
                 else -> {
+                    println("[VideoTrackExtractor] Публикации - неизвестный тип: ${publications.javaClass.name}")
                     val iterator = (publications as? Iterable<*>)?.iterator()
                     val first = iterator?.next()
                     when {
@@ -168,7 +206,18 @@ internal object VideoTrackExtractor {
             if (!isSubscribed) {
                 println("[VideoTrackExtractor] Подписываемся на публикацию трека")
                 setSubscribedMethod.invoke(publication, true)
-                Thread.sleep(200) // Ждём немного, чтобы трек стал доступен
+                
+                // Ждём, пока трек станет доступен после подписки
+                var attempts = 0
+                while (attempts < 10) {
+                    Thread.sleep(300)
+                    val track = getTrackFromPublication(publication) as? VideoTrack
+                    if (track != null) {
+                        println("[VideoTrackExtractor] Трек стал доступен после подписки (попытка $attempts)")
+                        break
+                    }
+                    attempts++
+                }
             } else {
                 println("[VideoTrackExtractor] Уже подписаны на публикацию")
             }

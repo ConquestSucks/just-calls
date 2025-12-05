@@ -31,28 +31,54 @@ fun RoomConnectionHandler(
         try {
             println("[RoomConnectionHandler] Запрашиваем токен для комнаты roomKey=$roomName")
             val result = service.getRoomToken(roomName)
-            val apiResult = result.getOrNull()
-            if (apiResult != null && apiResult.success && apiResult.data != null) {
-                val data = apiResult.data
-                println("[RoomConnectionHandler] getRoomToken success: token=${data.token.take(20)}..., userIdentity=${data.userIdentity}")
-                
-                try {
-                    liveKitManager.connect(data, "wss://wss.ghjc.ru")
-                    println("[RoomConnectionHandler] LiveKit подключение инициировано")
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    val errorMsg = "Ошибка подключения к видеозвонку: ${e.message}"
-                    connectionError = errorMsg
-                    onConnectionError(errorMsg)
-                    println("[RoomConnectionHandler] LiveKit подключение ошибка: ${e.message}")
+            
+            result.fold(
+                onSuccess = { apiResult ->
+                    if (apiResult.success && apiResult.data != null) {
+                        val data = apiResult.data
+                        println("[RoomConnectionHandler] getRoomToken success: token=${data.token.take(20)}..., userIdentity=${data.userIdentity}")
+                        
+                        try {
+                            liveKitManager.connect(data, "wss://wss.ghjc.ru")
+                            println("[RoomConnectionHandler] LiveKit подключение инициировано")
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            val errorMsg = "Ошибка подключения к видеозвонку: ${e.message}"
+                            connectionError = errorMsg
+                            onConnectionError(errorMsg)
+                            println("[RoomConnectionHandler] LiveKit подключение ошибка: ${e.message}")
+                        }
+                    } else {
+                        val errorCode = apiResult.error?.code ?: "UNKNOWN"
+                        val errorMsg = apiResult.error?.message ?: "unknown error"
+                        println("[RoomConnectionHandler] getRoomToken error - code: $errorCode, message: $errorMsg")
+                        
+                        val fullErrorMsg = if (errorCode.contains("ACCESS_DENIED", ignoreCase = true) || 
+                                               errorMsg.contains("access denied", ignoreCase = true)) {
+                            "Доступ запрещен. Возможно, вы уже подключены к другой комнате. Попробуйте выйти и войти снова."
+                        } else {
+                            "Не удалось получить токен: $errorMsg"
+                        }
+                        
+                        connectionError = fullErrorMsg
+                        onConnectionError(fullErrorMsg)
+                    }
+                },
+                onFailure = { exception ->
+                    exception.printStackTrace()
+                    val errorMsg = exception.message ?: "unknown error"
+                    println("[RoomConnectionHandler] getRoomToken exception: $errorMsg")
+                    
+                    val fullErrorMsg = if (errorMsg.contains("access denied", ignoreCase = true)) {
+                        "Доступ запрещен. Возможно, вы уже подключены к другой комнате. Попробуйте выйти и войти снова."
+                    } else {
+                        "Ошибка при получении токена: $errorMsg"
+                    }
+                    
+                    connectionError = fullErrorMsg
+                    onConnectionError(fullErrorMsg)
                 }
-            } else {
-                val errorMsg = apiResult?.error?.message ?: "unknown error"
-                val fullErrorMsg = "Не удалось получить токен: $errorMsg"
-                connectionError = fullErrorMsg
-                onConnectionError(fullErrorMsg)
-                println("[RoomConnectionHandler] getRoomToken error: $errorMsg")
-            }
+            )
         } catch (e: Exception) {
             e.printStackTrace()
             val errorMsg = "Ошибка при получении токена: ${e.message}"

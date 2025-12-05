@@ -3,13 +3,19 @@ package com.justcalls.ui.screens.room.components
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.justcalls.livekit.LiveKitManager
+import io.livekit.android.room.track.VideoTrack
+import io.livekit.android.util.flow
 import livekit.org.webrtc.SurfaceViewRenderer
 import livekit.org.webrtc.EglBase
+import kotlinx.coroutines.delay
 
 @Composable
 actual fun VideoSurfaceView(
@@ -18,99 +24,154 @@ actual fun VideoSurfaceView(
     participantId: String,
     modifier: Modifier
 ) {
-    val context = LocalContext.current
-        val surfaceId = videoSurface as? String
+    val surfaceId = videoSurface as? String
+    
+    if (surfaceId != null && liveKitManager != null) {
+        val isLocal = surfaceId.startsWith("local:")
+        var track by remember { mutableStateOf<VideoTrack?>(null) }
         
-        if (surfaceId != null && liveKitManager != null) {
-            val isLocal = surfaceId.startsWith("local:")
-            
-            val eglBaseContext = remember {
+        val room = remember {
             try {
-                val getEglBaseContextMethod = liveKitManager.javaClass.getMethod("getEglBaseContext")
-                getEglBaseContextMethod.invoke(liveKitManager) as? livekit.org.webrtc.EglBase.Context
+                val getRoomMethod = liveKitManager.javaClass.getMethod("getRoom")
+                getRoomMethod.invoke(liveKitManager) as? io.livekit.android.room.Room
             } catch (e: Exception) {
-                println("[VideoSurfaceView] Не удалось получить EGL контекст из LiveKitManager: ${e.message}")
                 null
             }
         }
         
-        val eglBase = remember {
-            if (eglBaseContext != null) {
-                EglBase.create(eglBaseContext)
-            } else {
-                EglBase.create()
+        LaunchedEffect(participantId, liveKitManager, isLocal, room) {
+            if (isLocal && room != null) {
+                try {
+                    val localParticipant = room.localParticipant
+                    if (localParticipant != null) {
+                        localParticipant::videoTrackPublications.flow.collect { publications ->
+                            val videoTrack = try {
+                                val first = publications.firstOrNull()
+                                when {
+                                    first is Pair<*, *> -> first.second as? VideoTrack
+                                    first is VideoTrack -> first
+                                    else -> null
+                                }
+                            } catch (e: Exception) {
+                                null
+                            }
+                            track = videoTrack
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Ignore
+                }
+            } else if (!isLocal) {
+                var attempts = 0
+                while (attempts < 20) {
+                    val foundTrack = try {
+                        val managerClass = liveKitManager.javaClass
+                        val getTrackMethod = managerClass.getMethod("getVideoTrack", String::class.java)
+                        getTrackMethod.invoke(liveKitManager, participantId) as? VideoTrack
+                    } catch (e: Exception) {
+                        null
+                    }
+                    
+                    if (foundTrack != null) {
+                        track = foundTrack
+                        break
+                    } else {
+                        attempts++
+                        if (attempts < 20) {
+                            delay(300)
+                        }
+                    }
+                }
             }
         }
         
+        var rendererInitialized by remember { mutableStateOf(false) }
+        var currentTrack by remember { mutableStateOf<VideoTrack?>(null) }
+        
         AndroidView(
             factory = { ctx ->
-                println("[VideoSurfaceView] Создание SurfaceViewRenderer для участника: $participantId, isLocal=$isLocal")
-                
                 val renderer = SurfaceViewRenderer(ctx)
-                renderer.init(eglBase.eglBaseContext, null)
+                renderer.setMirror(isLocal)
                 renderer.setEnableHardwareScaler(true)
-                renderer.setMirror(false)
                 
-                println("[VideoSurfaceView] Renderer инициализирован: eglBase=${eglBase.eglBaseContext != null}")
-                
-                fun addRendererToTrack() {
+                if (room != null) {
                     try {
-                        val managerClass = liveKitManager.javaClass
-                        if (isLocal) {
-                            val getLocalTrackMethod = managerClass.getMethod("getLocalVideoTrack", String::class.java)
-                            val track = getLocalTrackMethod.invoke(liveKitManager, participantId) as? io.livekit.android.room.track.LocalVideoTrack
-                            if (track != null) {
-                                println("[VideoSurfaceView] Локальный трек найден: $track")
-                                track.addRenderer(renderer)
-                                println("[VideoSurfaceView] Добавлен renderer к локальному треку")
-                            } else {
-                                println("[VideoSurfaceView] Локальный трек не найден для $participantId")
-                            }
-                        } else {
-                            val getTrackMethod = managerClass.getMethod("getVideoTrack", String::class.java)
-                            val track = getTrackMethod.invoke(liveKitManager, participantId) as? io.livekit.android.room.track.VideoTrack
-                            if (track != null) {
-                                println("[VideoSurfaceView] Удалённый трек найден: $track")
-                                track.addRenderer(renderer)
-                                println("[VideoSurfaceView] Добавлен renderer к удалённому треку")
-                            } else {
-                                println("[VideoSurfaceView] Удалённый трек не найден для $participantId")
-                            }
-                        }
+                        room.initVideoRenderer(renderer)
+                        rendererInitialized = true
                     } catch (e: Exception) {
-                        println("[VideoSurfaceView] Ошибка при добавлении renderer к треку: ${e.message}")
-                        e.printStackTrace()
+                        try {
+                            renderer.init(EglBase.create().eglBaseContext, null)
+                            rendererInitialized = true
+                        } catch (e2: Exception) {
+                            // Ignore
+                        }
+                    }
+                } else {
+                    try {
+                        renderer.init(EglBase.create().eglBaseContext, null)
+                        rendererInitialized = true
+                    } catch (e: Exception) {
+                        // Ignore
                     }
                 }
-                
-                addRendererToTrack()
-                
-                renderer.addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
-                    override fun onViewAttachedToWindow(v: android.view.View) {
-                        println("[VideoSurfaceView] View attached to window, повторно добавляем renderer")
-                        addRendererToTrack()
-                    }
-                    
-                    override fun onViewDetachedFromWindow(v: android.view.View) {
-                        println("[VideoSurfaceView] View detached from window")
-                    }
-                })
                 
                 renderer
             },
             update = { view ->
-                println("[VideoSurfaceView] Обновление AndroidView")
+                val renderer = view as? SurfaceViewRenderer
+                if (renderer != null) {
+                    if (!rendererInitialized && room != null) {
+                        try {
+                            room.initVideoRenderer(renderer)
+                            renderer.setMirror(isLocal)
+                            renderer.setEnableHardwareScaler(true)
+                            rendererInitialized = true
+                        } catch (e: Exception) {
+                            try {
+                                renderer.init(EglBase.create().eglBaseContext, null)
+                                renderer.setMirror(isLocal)
+                                renderer.setEnableHardwareScaler(true)
+                                rendererInitialized = true
+                            } catch (e2: Exception) {
+                                // Ignore
+                            }
+                        }
+                    }
+                    
+                    if (track != null && rendererInitialized && currentTrack != track) {
+                        currentTrack?.let { oldTrack ->
+                            try {
+                                oldTrack.removeRenderer(renderer)
+                            } catch (e: Exception) {
+                                // Ignore
+                            }
+                        }
+                        
+                        try {
+                            track!!.addRenderer(renderer)
+                            currentTrack = track
+                        } catch (e: Exception) {
+                            // Ignore
+                        }
+                    } else if (track == null && currentTrack != null) {
+                        try {
+                            currentTrack?.removeRenderer(renderer)
+                            currentTrack = null
+                        } catch (e: Exception) {
+                            // Ignore
+                        }
+                    }
+                }
             },
             modifier = modifier.fillMaxSize()
         )
         
         DisposableEffect(participantId) {
             onDispose {
-                println("[VideoSurfaceView] Disposing для участника: $participantId")
+                track = null
+                currentTrack = null
             }
         }
-    } else {
-        println("[VideoSurfaceView] Неверный surfaceId: $surfaceId или liveKitManager is null")
     }
 }
 
