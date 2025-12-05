@@ -24,7 +24,7 @@ internal object ParticipantUpdater {
         room: Room,
         participants: MutableList<LiveKitParticipant>
     ) {
-        val local = room.localParticipant ?: return
+        val local = room.localParticipant
         
         val identityStr = local.identity?.toString() ?: "local"
         val nameStr = local.name ?: identityStr
@@ -104,8 +104,8 @@ internal object ParticipantUpdater {
         audioPubs: Any
     ): Pair<Boolean, Boolean> {
         return try {
-            val isCameraEnabled = when {
-                videoPubs is Collection<*> -> {
+            val isCameraEnabled = when (videoPubs) {
+                is Collection<*> -> {
                     val hasPubs = videoPubs.isNotEmpty()
                     println("[ParticipantUpdater] Видео публикации (Collection): размер=${videoPubs.size}, isNotEmpty=$hasPubs")
                     if (hasPubs) {
@@ -119,9 +119,10 @@ internal object ParticipantUpdater {
                                         println("[ParticipantUpdater] Первый элемент - Pair, извлекаем публикацию")
                                         firstPub.second ?: firstPub.first
                                     }
+
                                     else -> firstPub
                                 }
-                                
+
                                 // Пытаемся проверить состояние публикации
                                 try {
                                     val isMutedMethod = publication?.javaClass?.getMethod("isMuted")
@@ -145,20 +146,22 @@ internal object ParticipantUpdater {
                         false
                     }
                 }
-                videoPubs is Map<*, *> -> {
+
+                is Map<*, *> -> {
                     val hasPubs = videoPubs.isNotEmpty()
                     println("[ParticipantUpdater] Видео публикации (Map): размер=${videoPubs.size}, isNotEmpty=$hasPubs")
                     hasPubs
                 }
+
                 else -> {
                     println("[ParticipantUpdater] Видео публикации: неизвестный тип ${videoPubs.javaClass.name}")
                     false
                 }
             }
             
-            val isMicrophoneEnabled = when {
-                audioPubs is Collection<*> -> (audioPubs as Collection<*>).isNotEmpty()
-                audioPubs is Map<*, *> -> (audioPubs as Map<*, *>).isNotEmpty()
+            val isMicrophoneEnabled = when (audioPubs) {
+                is Collection<*> -> audioPubs.isNotEmpty()
+                is Map<*, *> -> audioPubs.isNotEmpty()
                 else -> false
             }
             

@@ -22,7 +22,6 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
-import kotlinx.serialization.json.Json
 
 class AuthService(
     private val apiClient: ApiClient,
@@ -88,7 +87,7 @@ class AuthService(
                     Result.success(response)
                 } catch (e: SerializationException) {
                     val errorMessage = e.message ?: ""
-                    val guidPattern = Regex("""([a-f0-9]{8}[-]?[a-f0-9]{4}[-]?[a-f0-9]{4}[-]?[a-f0-9]{4}[-]?[a-f0-9]{12})""", RegexOption.IGNORE_CASE)
+                    val guidPattern = Regex("""([a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12})""", RegexOption.IGNORE_CASE)
                     val guidMatch = guidPattern.find(errorMessage)
                     
                     if (guidMatch != null) {

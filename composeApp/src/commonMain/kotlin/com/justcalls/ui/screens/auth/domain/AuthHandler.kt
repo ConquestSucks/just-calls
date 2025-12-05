@@ -43,7 +43,7 @@ class AuthHandler(
                         }
                     },
                     onFailure = { exception ->
-                        state.errorMessage = NetworkErrorHandler.getErrorMessage(exception)
+                        state.errorMessage = getErrorMessage(exception)
                     }
                 )
             }

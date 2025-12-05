@@ -3,11 +3,6 @@ package com.justcalls.ui.screens.room.connection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.justcalls.data.models.responses.RoomTokenResult
 import com.justcalls.data.network.RoomService
 import com.justcalls.livekit.LiveKitManager
 import kotlinx.coroutines.launch
@@ -19,8 +14,7 @@ fun RoomConnectionHandler(
     liveKitManager: LiveKitManager,
     onConnectionError: (String) -> Unit
 ) {
-    var connectionError by remember { mutableStateOf<String?>(null) }
-    
+
     LaunchedEffect(roomName, roomService) {
         val service = roomService
         if (service == null) {
@@ -44,7 +38,6 @@ fun RoomConnectionHandler(
                         } catch (e: Exception) {
                             e.printStackTrace()
                             val errorMsg = "Ошибка подключения к видеозвонку: ${e.message}"
-                            connectionError = errorMsg
                             onConnectionError(errorMsg)
                             println("[RoomConnectionHandler] LiveKit подключение ошибка: ${e.message}")
                         }
@@ -59,8 +52,7 @@ fun RoomConnectionHandler(
                         } else {
                             "Не удалось получить токен: $errorMsg"
                         }
-                        
-                        connectionError = fullErrorMsg
+
                         onConnectionError(fullErrorMsg)
                     }
                 },
@@ -74,15 +66,13 @@ fun RoomConnectionHandler(
                     } else {
                         "Ошибка при получении токена: $errorMsg"
                     }
-                    
-                    connectionError = fullErrorMsg
+
                     onConnectionError(fullErrorMsg)
                 }
             )
         } catch (e: Exception) {
             e.printStackTrace()
             val errorMsg = "Ошибка при получении токена: ${e.message}"
-            connectionError = errorMsg
             onConnectionError(errorMsg)
             println("[RoomConnectionHandler] getRoomToken exception: ${e.message}")
         }

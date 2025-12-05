@@ -43,20 +43,17 @@ actual fun VideoSurfaceView(
             if (isLocal && room != null) {
                 try {
                     val localParticipant = room.localParticipant
-                    if (localParticipant != null) {
-                        localParticipant::videoTrackPublications.flow.collect { publications ->
-                            val videoTrack = try {
-                                val first = publications.firstOrNull()
-                                when {
-                                    first is Pair<*, *> -> first.second as? VideoTrack
-                                    first is VideoTrack -> first
-                                    else -> null
-                                }
-                            } catch (e: Exception) {
-                                null
+                    localParticipant::videoTrackPublications.flow.collect { publications ->
+                        val videoTrack = try {
+                            val first = publications.firstOrNull()
+                            when {
+                                first is Pair<*, *> -> first.second as? VideoTrack
+                                else -> null
                             }
-                            track = videoTrack
+                        } catch (e: Exception) {
+                            null
                         }
+                        track = videoTrack
                     }
                 } catch (e: Exception) {
                     // Ignore
@@ -118,48 +115,46 @@ actual fun VideoSurfaceView(
                 renderer
             },
             update = { view ->
-                val renderer = view as? SurfaceViewRenderer
-                if (renderer != null) {
-                    if (!rendererInitialized && room != null) {
+                val renderer = view
+                if (!rendererInitialized && room != null) {
+                    try {
+                        room.initVideoRenderer(renderer)
+                        renderer.setMirror(isLocal)
+                        renderer.setEnableHardwareScaler(true)
+                        rendererInitialized = true
+                    } catch (e: Exception) {
                         try {
-                            room.initVideoRenderer(renderer)
+                            renderer.init(EglBase.create().eglBaseContext, null)
                             renderer.setMirror(isLocal)
                             renderer.setEnableHardwareScaler(true)
                             rendererInitialized = true
-                        } catch (e: Exception) {
-                            try {
-                                renderer.init(EglBase.create().eglBaseContext, null)
-                                renderer.setMirror(isLocal)
-                                renderer.setEnableHardwareScaler(true)
-                                rendererInitialized = true
-                            } catch (e2: Exception) {
-                                // Ignore
-                            }
+                        } catch (e2: Exception) {
+                            // Ignore
                         }
                     }
-                    
-                    if (track != null && rendererInitialized && currentTrack != track) {
-                        currentTrack?.let { oldTrack ->
-                            try {
-                                oldTrack.removeRenderer(renderer)
-                            } catch (e: Exception) {
-                                // Ignore
-                            }
-                        }
-                        
+                }
+
+                if (track != null && rendererInitialized && currentTrack != track) {
+                    currentTrack?.let { oldTrack ->
                         try {
-                            track!!.addRenderer(renderer)
-                            currentTrack = track
+                            oldTrack.removeRenderer(renderer)
                         } catch (e: Exception) {
                             // Ignore
                         }
-                    } else if (track == null && currentTrack != null) {
-                        try {
-                            currentTrack?.removeRenderer(renderer)
-                            currentTrack = null
-                        } catch (e: Exception) {
-                            // Ignore
-                        }
+                    }
+
+                    try {
+                        track!!.addRenderer(renderer)
+                        currentTrack = track
+                    } catch (e: Exception) {
+                        // Ignore
+                    }
+                } else if (track == null && currentTrack != null) {
+                    try {
+                        currentTrack?.removeRenderer(renderer)
+                        currentTrack = null
+                    } catch (e: Exception) {
+                        // Ignore
                     }
                 }
             },

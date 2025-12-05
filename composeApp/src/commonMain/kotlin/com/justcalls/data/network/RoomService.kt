@@ -41,8 +41,7 @@ class RoomService(
                 
                 refreshResult.fold(
                     onSuccess = { refreshBody ->
-                        val isUnauthorized = refreshBody.success == false &&
-                            refreshBody.error?.code.equals("UNAUTHORIZED", ignoreCase = true) == true
+                        val isUnauthorized = !refreshBody.success && refreshBody.error?.code.equals("UNAUTHORIZED", ignoreCase = true)
 
                         if (isUnauthorized) {
                             Result.failure(e)

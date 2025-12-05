@@ -12,7 +12,6 @@ import io.livekit.android.room.track.LocalVideoTrack
 import io.livekit.android.util.LoggingLevel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -172,7 +171,7 @@ actual class LiveKitManager {
         val currentRoom = room ?: return null
         
         try {
-            val localIdentity = currentRoom.localParticipant?.identity?.toString()
+            val localIdentity = currentRoom.localParticipant.identity?.toString()
             if (participantId == localIdentity) {
                 // Сначала проверяем сохранённый трек
                 localVideoTracks[participantId]?.let {
@@ -183,9 +182,9 @@ actual class LiveKitManager {
                 // Если трек не сохранён, пытаемся получить его из публикаций
                 val localParticipant = currentRoom.localParticipant
                 println("[LiveKitManager] Локальный участник: получение видео трека")
-                println("[LiveKitManager] Количество публикаций: ${localParticipant?.videoTrackPublications?.size ?: 0}")
+                println("[LiveKitManager] Количество публикаций: ${localParticipant.videoTrackPublications.size}")
                 
-                val localVideoTrack = localParticipant?.videoTrackPublications?.let { pubs ->
+                val localVideoTrack = localParticipant.videoTrackPublications.let { pubs ->
                     VideoTrackExtractor.extractLocalVideoTrack(pubs, participantId)
                 }
                 
@@ -194,15 +193,11 @@ actual class LiveKitManager {
                     println("[LiveKitManager] Сохранён локальный видео трек для участника: $participantId, track=$localVideoTrack")
                     return "local:$participantId"
                 } else {
-                    println("[LiveKitManager] Локальный видео трек не найден для $participantId, публикаций: ${localParticipant?.videoTrackPublications?.size ?: 0}")
+                    println("[LiveKitManager] Локальный видео трек не найден для $participantId, публикаций: ${localParticipant.videoTrackPublications.size}")
                     // Если трек не найден, но камера включена, возвращаем поверхность для повторных попыток
-                    val isCameraEnabled = localParticipant?.videoTrackPublications?.let { pubs ->
-                        when {
-                            pubs is Collection<*> -> (pubs as Collection<*>).isNotEmpty()
-                            pubs is Map<*, *> -> (pubs as Map<*, *>).isNotEmpty()
-                            else -> false
-                        }
-                    } ?: false
+                    val isCameraEnabled = localParticipant.videoTrackPublications.let { pubs ->
+                        (pubs as Collection<*>).isNotEmpty()
+                    }
                     
                     if (isCameraEnabled) {
                         println("[LiveKitManager] Камера включена, но трек ещё не доступен, возвращаем поверхность для повторных попыток")
@@ -272,7 +267,7 @@ actual class LiveKitManager {
             }
             
             // Fallback: получаем трек из публикаций
-            val localVideoTrack = localParticipant.videoTrackPublications?.let { pubs ->
+            val localVideoTrack = localParticipant.videoTrackPublications.let { pubs ->
                 VideoTrackExtractor.extractLocalVideoTrack(pubs, participantId)
             }
             

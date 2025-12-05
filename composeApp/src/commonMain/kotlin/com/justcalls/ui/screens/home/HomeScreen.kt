@@ -1,6 +1,5 @@
 package com.justcalls.ui.screens.home
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +37,6 @@ import com.justcalls.ui.screens.home.components.buttonSection.ButtonSection
 import com.justcalls.ui.screens.home.components.headerSection.HeaderSection
 import com.justcalls.ui.screens.home.domain.RoomsHandler
 import com.justcalls.ui.theme.AppColors
-import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -119,7 +117,7 @@ fun HomeScreen(
                                 text = "Комнаты",
                                 fontSize = 16.sp,
                                 color = AppColors.TextHeader,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold
                             )
                             Spacer(modifier = Modifier.height(12.dp))
 

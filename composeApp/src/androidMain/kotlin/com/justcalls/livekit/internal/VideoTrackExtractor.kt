@@ -41,28 +41,30 @@ internal object VideoTrackExtractor {
         println("[VideoTrackExtractor] extractLocalVideoTrack: тип публикаций=${publications.javaClass.name}")
         
         return try {
-            when {
-                publications is Collection<*> -> {
+            when (publications) {
+                is Collection<*> -> {
                     println("[VideoTrackExtractor] Публикации - Collection, размер=${publications.size}")
                     val first = publications.firstOrNull()
                     println("[VideoTrackExtractor] Первый элемент: ${first?.javaClass?.name}")
-                    
+
                     when {
                         first is Pair<*, *> -> {
                             val pairFirst = first.first
                             val pairSecond = first.second
-                            
+
                             println("[VideoTrackExtractor] Первый элемент - Pair: first=${pairFirst?.javaClass?.name}, second=${pairSecond?.javaClass?.name}")
-                            
+
                             when {
                                 pairSecond is LocalVideoTrack -> {
                                     println("[VideoTrackExtractor] Найден трек в Pair.second")
                                     pairSecond
                                 }
+
                                 pairFirst is LocalVideoTrack -> {
                                     println("[VideoTrackExtractor] Найден трек в Pair.first")
                                     pairFirst
                                 }
+
                                 else -> {
                                     // Пытаемся извлечь трек из публикации
                                     val publication = when {
@@ -72,7 +74,7 @@ internal object VideoTrackExtractor {
                                         pairSecond != null -> pairSecond
                                         else -> null
                                     }
-                                    
+
                                     if (publication != null) {
                                         println("[VideoTrackExtractor] Извлекаем трек из публикации: ${publication.javaClass.name}")
                                         getTrackFromPublication(publication) as? LocalVideoTrack
@@ -83,6 +85,7 @@ internal object VideoTrackExtractor {
                                 }
                             }
                         }
+
                         else -> {
                             val publication = first
                             println("[VideoTrackExtractor] Первый элемент не Pair: ${publication?.javaClass?.name}")
@@ -91,14 +94,17 @@ internal object VideoTrackExtractor {
                                     println("[VideoTrackExtractor] Первый элемент - это LocalVideoTrack")
                                     publication
                                 }
+
                                 publication is LocalTrackPublication -> {
                                     println("[VideoTrackExtractor] Первый элемент - это LocalTrackPublication, извлекаем трек")
                                     getTrackFromPublication(publication) as? LocalVideoTrack
                                 }
+
                                 publication != null -> {
                                     println("[VideoTrackExtractor] Первый элемент - неизвестный тип, пытаемся извлечь трек")
                                     getTrackFromPublication(publication) as? LocalVideoTrack
                                 }
+
                                 else -> {
                                     println("[VideoTrackExtractor] Первый элемент null")
                                     null
@@ -107,7 +113,8 @@ internal object VideoTrackExtractor {
                         }
                     }
                 }
-                publications is Map<*, *> -> {
+
+                is Map<*, *> -> {
                     println("[VideoTrackExtractor] Публикации - Map, размер=${publications.size}")
                     val firstValue = publications.values.firstOrNull()
                     when {
@@ -116,6 +123,7 @@ internal object VideoTrackExtractor {
                         else -> null
                     }
                 }
+
                 else -> {
                     println("[VideoTrackExtractor] Публикации - неизвестный тип: ${publications.javaClass.name}")
                     val iterator = (publications as? Iterable<*>)?.iterator()
@@ -127,6 +135,7 @@ internal object VideoTrackExtractor {
                                 getTrackFromPublication(publication) as? LocalVideoTrack
                             } else null
                         }
+
                         first is LocalVideoTrack -> first
                         first != null -> getTrackFromPublication(first) as? LocalVideoTrack
                         else -> null
@@ -145,22 +154,25 @@ internal object VideoTrackExtractor {
         participantId: String
     ): VideoTrack? {
         return try {
-            val publication: RemoteTrackPublication? = when {
-                publications is Collection<*> -> {
+            val publication: RemoteTrackPublication? = when (publications) {
+                is Collection<*> -> {
                     val first = publications.firstOrNull()
-                    when {
-                        first is Pair<*, *> -> {
+                    when (first) {
+                        is Pair<*, *> -> {
                             val pairFirst = first.first
-                            if (pairFirst is RemoteTrackPublication) pairFirst else null
+                            pairFirst as? RemoteTrackPublication
                         }
-                        first is RemoteTrackPublication -> first
+
+                        is RemoteTrackPublication -> first
                         else -> null
                     }
                 }
-                publications is Map<*, *> -> {
+
+                is Map<*, *> -> {
                     val firstValue = publications.values.firstOrNull()
-                    if (firstValue is RemoteTrackPublication) firstValue else null
+                    firstValue as? RemoteTrackPublication
                 }
+
                 else -> null
             }
             
