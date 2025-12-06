@@ -41,6 +41,7 @@ kotlin {
                     defFile(project.file("src/nativeInterop/cinterop/LiveKitWrappers.def"))
                     packageName("com.justcalls.livekit.wrappers")
                     compilerOpts("-framework", "Foundation", "-framework", "UIKit")
+                    includeDirs(project.file("src/nativeInterop/cinterop"))
                 }
             }
         }
