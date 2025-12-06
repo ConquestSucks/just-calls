@@ -6,3 +6,4 @@
 - (void)setTrack:(id _Nullable)track;
 - (void)cleanup;
 
+@end
