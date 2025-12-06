@@ -1,7 +1,7 @@
 import Foundation
 import LiveKit
 
-@objc public class LiveKitWrapper: NSObject {
+@objc public final class LiveKitWrapper: NSObject {
     private var room: Room?
     private var delegate: LiveKitWrapperDelegate?
     
@@ -16,7 +16,7 @@ import LiveKit
         }
     }
     
-    @objc public func connect(url: String, token: String, completion: @escaping (Error?) -> Void) {
+    @objc public func connectWithUrl(_ url: NSString, token: NSString, completion: @escaping (NSError?) -> Void) {
         guard let room = self.room else {
             completion(NSError(domain: "LiveKitWrapper", code: -1, userInfo: [NSLocalizedDescriptionKey: "Room not created"]))
             return
@@ -24,24 +24,19 @@ import LiveKit
         
         Task {
             do {
-                try await room.connect(url: url, token: token)
+                try await room.connect(url: url as String, token: token as String)
                 await MainActor.run {
                     completion(nil)
                 }
             } catch {
                 await MainActor.run {
-                    completion(error)
+                    completion(error as NSError)
                 }
             }
         }
     }
     
-    // Вспомогательные методы для упрощения вызовов из Kotlin
-    @objc public func connectWithUrl(_ url: NSString, token: NSString, completion: @escaping (NSError?) -> Void) {
-        connect(url: url as String, token: token as String, completion: completion)
-    }
-    
-    @objc public func disconnect(completion: @escaping () -> Void) {
+    @objc public func disconnectWithCompletion(_ completion: @escaping () -> Void) {
         guard let room = self.room else {
             completion()
             return
@@ -56,11 +51,7 @@ import LiveKit
         }
     }
     
-    @objc public func disconnectWithCompletion(_ completion: @escaping () -> Void) {
-        disconnect(completion: completion)
-    }
-    
-    @objc public func setMicrophoneEnabled(_ enabled: Bool, completion: @escaping (Error?) -> Void) {
+    @objc public func setMicrophoneEnabled(_ enabled: Bool, completion: @escaping (NSError?) -> Void) {
         guard let room = self.room else {
             completion(NSError(domain: "LiveKitWrapper", code: -1, userInfo: [NSLocalizedDescriptionKey: "Room not connected"]))
             return
@@ -74,19 +65,13 @@ import LiveKit
                 }
             } catch {
                 await MainActor.run {
-                    completion(error)
+                    completion(error as NSError)
                 }
             }
         }
     }
     
-    @objc public func setMicrophoneEnabled(_ enabled: Bool, completion: @escaping (NSError?) -> Void) {
-        setMicrophoneEnabled(enabled) { error in
-            completion(error as? NSError)
-        }
-    }
-    
-    @objc public func setCameraEnabled(_ enabled: Bool, completion: @escaping (Error?) -> Void) {
+    @objc public func setCameraEnabled(_ enabled: Bool, completion: @escaping (NSError?) -> Void) {
         guard let room = self.room else {
             completion(NSError(domain: "LiveKitWrapper", code: -1, userInfo: [NSLocalizedDescriptionKey: "Room not connected"]))
             return
@@ -100,15 +85,9 @@ import LiveKit
                 }
             } catch {
                 await MainActor.run {
-                    completion(error)
+                    completion(error as NSError)
                 }
             }
-        }
-    }
-    
-    @objc public func setCameraEnabled(_ enabled: Bool, completion: @escaping (NSError?) -> Void) {
-        setCameraEnabled(enabled) { error in
-            completion(error as? NSError)
         }
     }
     
@@ -165,6 +144,10 @@ import LiveKit
         return nil
     }
     
+    @objc public func getRemoteVideoTrackWithParticipantId(_ participantId: NSString) -> VideoTrack? {
+        return getRemoteVideoTrack(participantId: participantId as String)
+    }
+    
     @objc public func setDelegate(_ delegate: LiveKitWrapperDelegate?) {
         self.delegate = delegate
     }
@@ -190,14 +173,14 @@ extension LiveKitWrapper: RoomDelegate {
         }
     }
     
-    public func room(_ room: Room, participant: LocalParticipant, didPublish publication: LocalTrackPublication) {
+    public func room(_ room: Room, participant: LocalParticipant, didPublishTrack publication: LocalTrackPublication) {
         if publication.kind == .video {
             let participantId = participant.identity?.description ?? ""
             delegate?.onTrackSubscribed(participantId: participantId, isLocal: true)
         }
     }
     
-    public func room(_ room: Room, participant: LocalParticipant, didUnpublish publication: LocalTrackPublication) {
+    public func room(_ room: Room, participant: LocalParticipant, didUnpublishTrack publication: LocalTrackPublication) {
         if publication.kind == .video {
             let participantId = participant.identity?.description ?? ""
             delegate?.onTrackUnsubscribed(participantId: participantId, isLocal: true)
