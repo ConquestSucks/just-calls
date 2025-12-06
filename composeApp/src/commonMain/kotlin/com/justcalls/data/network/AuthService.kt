@@ -11,6 +11,9 @@ import com.justcalls.data.models.responses.SignUpResponse
 import com.justcalls.data.models.responses.UserResponse
 import com.justcalls.data.storage.TokenStorage
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.get
@@ -77,32 +80,37 @@ class AuthService(
                 setBody(request)
             }
             
-            if (httpResponse.status.value in 200..299) {
-                try {
-                    val response = httpResponse.body<ApiResult<SignUpResponse>>()
-                    Result.success(response)
-                } catch (e: SerializationException) {
-                    val errorMessage = e.message ?: ""
-                    val guidPattern = Regex("""([a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12})""", RegexOption.IGNORE_CASE)
-                    val guidMatch = guidPattern.find(errorMessage)
-                    
-                    if (guidMatch != null) {
-                        var guid = guidMatch.groupValues[1]
-                        guid = guid.replace("-", "").chunked(8).joinToString("-") { it }
-                        Result.success(ApiResult(
-                            success = true,
-                            data = SignUpResponse(guid = guid),
-                            error = null
-                        ))
-                    } else {
+            try {
+                val response = httpResponse.body<ApiResult<SignUpResponse>>()
+                Result.success(response)
+            } catch (e: SerializationException) {
+                // Если десериализация не удалась из-за нестабильного интернета,
+                // но статус успешный (200-299), пытаемся извлечь GUID из сырого ответа
+                if (httpResponse.status.value in 200..299) {
+                    try {
+                        // Читаем сырой текст ответа через call
+                        val rawText = httpResponse.call.response.readText()
+                        
+                        // Пытаемся распарсить JSON вручную
+                        val json = Json.parseToJsonElement(rawText) as? JsonObject
+                        if (json != null && json["success"]?.jsonPrimitive?.content == "true") {
+                            val dataValue = json["data"]?.jsonPrimitive?.content
+                            if (dataValue != null) {
+                                Result.success(ApiResult(
+                                    success = true,
+                                    data = dataValue,
+                                    error = null
+                                ))
+                            } else {
+                                Result.failure(e)
+                            }
+                        } else {
+                            Result.failure(e)
+                        }
+                    } catch (ex: Exception) {
                         Result.failure(e)
                     }
-                }
-            } else {
-                try {
-                    val response = httpResponse.body<ApiResult<SignUpResponse>>()
-                    Result.success(response)
-                } catch (e: Exception) {
+                } else {
                     Result.failure(e)
                 }
             }

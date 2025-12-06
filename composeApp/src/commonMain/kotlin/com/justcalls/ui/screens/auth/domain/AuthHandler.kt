@@ -82,7 +82,8 @@ class AuthHandler(
                         result.fold(
                             onSuccess = { apiResult ->
                                 if (apiResult.success && apiResult.data != null) {
-                                    val guid = apiResult.data.guid
+                                    // data - это строка (GUID), а не объект
+                                    val guid = apiResult.data
                                     state.registrationGuid = guid
                                     // Сохраняем GUID в постоянное хранилище
                                     registrationStorage.saveRegistrationGuid(state.registerEmail, guid)
