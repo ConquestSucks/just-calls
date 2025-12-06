@@ -1,7 +1,8 @@
 import Foundation
 import LiveKit
 
-@objc public final class LiveKitWrapper: NSObject, @unchecked Sendable {
+@objc(LiveKitWrapper)
+public final class LiveKitWrapper: NSObject, @unchecked Sendable {
     private var room: Room?
     private var delegate: LiveKitWrapperDelegate?
     

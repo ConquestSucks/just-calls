@@ -3,8 +3,8 @@ import LiveKit
 import SwiftUI
 import UIKit
 
-// Wrapper для отображения видео в Compose Multiplatform
-@objc public class VideoViewWrapper: UIView {
+@objc(VideoViewWrapper)
+public class VideoViewWrapper: UIView {
     private var videoView: VideoView?
     private var track: VideoTrack?
     
