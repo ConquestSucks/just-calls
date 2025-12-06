@@ -26,7 +26,7 @@ internal object ParticipantUpdaterIOS {
         participants: MutableList<LiveKitParticipant>
     ) {
         try {
-            @Suppress("CAST_NEVER_SUCCEEDS")
+            @Suppress("CAST_NEVER_SUCCEEDS", "Function invocation 'objc_msgSend()' expected")
             val identityFunc: (ObjCObject, Any?) -> Any? = objc_msgSend as (ObjCObject, Any?) -> Any?
             val identity = identityFunc(wrapper, sel_registerName("getLocalParticipantIdentity")) as? String ?: "local"
             val name = identityFunc(wrapper, sel_registerName("getLocalParticipantName")) as? String ?: identity
@@ -52,7 +52,7 @@ internal object ParticipantUpdaterIOS {
         participants: MutableList<LiveKitParticipant>
     ) {
         try {
-            @Suppress("CAST_NEVER_SUCCEEDS")
+            @Suppress("CAST_NEVER_SUCCEEDS", "Function invocation 'objc_msgSend()' expected")
             val getRemoteFunc: (ObjCObject, Any?) -> Any? = objc_msgSend as (ObjCObject, Any?) -> Any?
             val remoteParticipants = getRemoteFunc(wrapper, sel_registerName("getRemoteParticipants")) as? NSArray
             if (remoteParticipants != null) {

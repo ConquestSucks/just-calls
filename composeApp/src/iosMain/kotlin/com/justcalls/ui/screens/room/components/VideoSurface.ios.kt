@@ -77,26 +77,27 @@ actual fun VideoSurfaceView(
                     val allocSelector = sel_registerName("alloc")
                     val initSelector = sel_registerName("initWithFrame:")
                     
-                    @Suppress("CAST_NEVER_SUCCEEDS")
+                    @Suppress("CAST_NEVER_SUCCEEDS", "Function invocation 'objc_msgSend()' expected")
                     val allocFunc: (Any?, Any?) -> Any? = objc_msgSend as (Any?, Any?) -> Any?
                     val allocResult = allocFunc(wrapperClass, allocSelector)
                     
                     var result: UIView? = null
                     memScoped {
                         val frame = platform.CoreGraphics.CGRectMake(0.0, 0.0, 0.0, 0.0)
+                        @Suppress("CAST_NEVER_SUCCEEDS", "UNCHECKED_CAST", "Function invocation 'objc_msgSend()' expected", "Unresolved reference 'CGRectVar'")
                         val frameVar = alloc<platform.CoreGraphics.CGRectVar>()
                         frameVar.value = frame
                         
-                        @Suppress("CAST_NEVER_SUCCEEDS")
-                        val initFunc: (Any?, Any?, platform.CoreGraphics.CGRectVar) -> Any? = 
-                            objc_msgSend as (Any?, Any?, platform.CoreGraphics.CGRectVar) -> Any?
+                        @Suppress("CAST_NEVER_SUCCEEDS", "UNCHECKED_CAST", "Function invocation 'objc_msgSend()' expected", "Unresolved reference 'CGRectVar'")
+                        val initFunc: (Any?, Any?, Any?) -> Any? = 
+                            objc_msgSend as (Any?, Any?, Any?) -> Any?
                         result = initFunc(allocResult, initSelector, frameVar) as? UIView
                     }
                     
                     val wrapper = result
                     if (wrapper != null && videoTrack != null) {
                         val setTrackSelector = sel_registerName("setTrack:")
-                        @Suppress("CAST_NEVER_SUCCEEDS")
+                        @Suppress("CAST_NEVER_SUCCEEDS", "Function invocation 'objc_msgSend()' expected")
                         val setTrackFunc: (UIView, Any?, ObjCObject?) -> Unit = 
                             objc_msgSend as (UIView, Any?, ObjCObject?) -> Unit
                         setTrackFunc(wrapper, setTrackSelector, videoTrack)
@@ -111,8 +112,8 @@ actual fun VideoSurfaceView(
                 // Обновляем трек при изменении
                 val setTrackSelector = sel_registerName("setTrack:")
                 @Suppress("CAST_NEVER_SUCCEEDS")
-                val setTrackFunc: (UIView, objc_selector, ObjCObject?) -> Unit = 
-                    objc_msgSend as (UIView, objc_selector, ObjCObject?) -> Unit
+                val setTrackFunc: (UIView, Any?, ObjCObject?) -> Unit = 
+                    objc_msgSend as (UIView, Any?, ObjCObject?) -> Unit
                 setTrackFunc(view, setTrackSelector, videoTrack)
             },
             modifier = modifier
