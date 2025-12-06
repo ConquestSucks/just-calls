@@ -1,19 +1,8 @@
 package com.justcalls.ui.screens.room
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import com.justcalls.livekit.LiveKitManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import platform.AVFoundation.AVAudioSession
-import platform.AVFoundation.AVCaptureDevice
-import platform.AVFoundation.AVMediaTypeVideo
-import platform.AVFoundation.AVAuthorizationStatusNotDetermined
-import platform.AVFoundation.AVAuthorizationStatusAuthorized
-import kotlinx.cinterop.ExperimentalForeignApi
 
-@OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun rememberPermissionLauncher(
     liveKitManager: LiveKitManager,
@@ -23,67 +12,24 @@ actual fun rememberPermissionLauncher(
     onCameraChanged: (Boolean) -> Unit,
     onError: (String) -> Unit
 ): (Array<String>) -> Unit {
-    val scope = remember { CoroutineScope(Dispatchers.Main) }
-    
-    return remember {
-        { permissions ->
-            scope.launch {
-                permissions.forEach { permission ->
-                    when (permission) {
-                        "CAMERA" -> {
-                            val status = AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)
-                            when (status) {
-                                AVAuthorizationStatusNotDetermined -> {
-                                    AVCaptureDevice.requestAccessForMediaType(AVMediaTypeVideo) { granted ->
-                                        if (granted) {
-                                            if (isCameraEnabled) {
-                                                liveKitManager.setCameraEnabled(true)
-                                            }
-                                        } else {
-                                            onCameraChanged(false)
-                                            onError("Требуется разрешение на использование камеры")
-                                        }
-                                    }
-                                }
-                                AVAuthorizationStatusAuthorized -> {
-                                    if (isCameraEnabled) {
-                                        liveKitManager.setCameraEnabled(true)
-                                    }
-                                }
-                                else -> {
-                                    onCameraChanged(false)
-                                    onError("Требуется разрешение на использование камеры")
-                                }
-                            }
-                        }
-                        "RECORD_AUDIO" -> {
-                            val audioSession = AVAudioSession.sharedInstance()
-                            val currentPermission = audioSession.recordPermission
-                            // AVAudioSessionRecordPermission: 0 = Undetermined, 1 = Denied, 2 = Granted
-                            when (currentPermission.toInt()) {
-                                0 -> { // Undetermined
-                                    audioSession.requestRecordPermission { granted: Boolean ->
-                                        if (granted) {
-                                            if (isMicrophoneEnabled) {
-                                                liveKitManager.setMicrophoneEnabled(true)
-                                            }
-                                        } else {
-                                            onMicrophoneChanged(false)
-                                            onError("Требуется разрешение на использование микрофона")
-                                        }
-                                    }
-                                }
-                                2 -> { // Granted
-                                    if (isMicrophoneEnabled) {
-                                        liveKitManager.setMicrophoneEnabled(true)
-                                    }
-                                }
-                                else -> { // Denied
-                                    onMicrophoneChanged(false)
-                                    onError("Требуется разрешение на использование микрофона")
-                                }
-                            }
-                        }
+    // На iOS LiveKit SDK автоматически запрашивает разрешения при первом использовании
+    // через room.localParticipant.setCamera/setMicrophone
+    // Вызываем методы LiveKit, которые запросят разрешения через систему iOS
+    return { permissions ->
+        permissions.forEach { permission ->
+            when (permission) {
+                "CAMERA" -> {
+                    // LiveKit SDK запросит разрешение автоматически при вызове setCameraEnabled
+                    // iOS покажет системный диалог, если разрешение еще не запрошено
+                    if (isCameraEnabled) {
+                        liveKitManager.setCameraEnabled(true)
+                    }
+                }
+                "RECORD_AUDIO" -> {
+                    // LiveKit SDK запросит разрешение автоматически при вызове setMicrophoneEnabled
+                    // iOS покажет системный диалог, если разрешение еще не запрошено
+                    if (isMicrophoneEnabled) {
+                        liveKitManager.setMicrophoneEnabled(true)
                     }
                 }
             }
@@ -91,22 +37,11 @@ actual fun rememberPermissionLauncher(
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun hasPermission(permission: String): Boolean {
-    return remember(permission) {
-        when (permission) {
-            "CAMERA" -> {
-                val status = AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)
-                status == AVAuthorizationStatusAuthorized
-            }
-            "RECORD_AUDIO" -> {
-                val audioSession = AVAudioSession.sharedInstance()
-                // AVAudioSessionRecordPermission: 0 = Undetermined, 1 = Denied, 2 = Granted
-                audioSession.recordPermission.toInt() == 2
-            }
-            else -> false
-        }
-    }
+    // На iOS разрешения запрашиваются автоматически через LiveKit SDK
+    // Возвращаем false, чтобы всегда вызывался permissionLauncher,
+    // который вызовет методы LiveKit, запрашивающие разрешения
+    return false
 }
 
