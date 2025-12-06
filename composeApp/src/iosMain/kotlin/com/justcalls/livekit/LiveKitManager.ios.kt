@@ -41,30 +41,12 @@ actual class LiveKitManager {
     
     actual suspend fun connect(tokenResult: RoomTokenResult, serverUrl: String) {
         try {
-            // Создаем LiveKitWrapper через Objective-C runtime
-            val wrapperClass = objc_getClass("LiveKitWrapper")
-            if (wrapperClass == null) {
-                throw Exception("LiveKitWrapper class not found. Make sure LiveKitWrapper.swift is added to the Xcode project.")
-            }
-            
-            // Создаем экземпляр через alloc/init
-            val allocSelector = sel_registerName("alloc")
-            val initSelector = sel_registerName("init")
-            
-            @Suppress("UNCHECKED_CAST")
-            val allocFunc: (Any?, Any?) -> Any? = reinterpretCast(objc_msgSend)
-            val allocResult = allocFunc(wrapperClass, allocSelector)
-            
-            @Suppress("UNCHECKED_CAST")
-            val initFunc: (Any?, Any?) -> Any? = reinterpretCast(objc_msgSend)
-            val newWrapper = initFunc(allocResult, initSelector) as? ObjCObject
+            // Используем сгенерированные классы из cinterop
+            val newWrapper = com.justcalls.livekit.wrappers.LiveKitWrapper.alloc().init() as? ObjCObject
                 ?: throw Exception("Failed to create LiveKitWrapper instance")
             
             // Создаем комнату
-            val createRoomSelector = sel_registerName("createRoom")
-            @Suppress("UNCHECKED_CAST")
-            val createRoomFunc: (ObjCObject, Any?) -> Unit = reinterpretCast(objc_msgSend)
-            createRoomFunc(newWrapper, createRoomSelector)
+            (newWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.createRoom()
             
             // Подключаемся к комнате
             suspendCancellableCoroutine<Unit> { continuation ->
@@ -80,11 +62,8 @@ actual class LiveKitManager {
                     }
                 }
                 
-                // Вызываем метод с блоком
-                val connectSelector = sel_registerName("connectWithUrl:token:completion:")
-                @Suppress("UNCHECKED_CAST")
-                val connectFunc: (ObjCObject, Any?, NSString, NSString, (NSError?) -> Unit) -> Unit = reinterpretCast(objc_msgSend)
-                connectFunc(newWrapper, connectSelector, urlString, tokenString, block)
+                // Вызываем метод с блоком используя обертки из cinterop
+                (newWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.connectWithUrlTokenCompletion(urlString, tokenString, block)
             }
             
             this.wrapper = newWrapper
@@ -119,10 +98,8 @@ actual class LiveKitManager {
                         continuation.resume(Unit)
                     }
                     
-                    val disconnectSelector = sel_registerName("disconnectWithCompletion:")
-                    @Suppress("UNCHECKED_CAST")
-                    val disconnectFunc: (ObjCObject, Any?, () -> Unit) -> Unit = reinterpretCast(objc_msgSend)
-                    disconnectFunc(currentWrapper, disconnectSelector, block)
+                    // Используем обертки из cinterop
+                    (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.disconnectWithCompletion(block)
                 }
             }
             
@@ -146,10 +123,8 @@ actual class LiveKitManager {
                         continuation.resume(Unit)
                     }
                     
-                    val setMicrophoneSelector = sel_registerName("setMicrophoneEnabled:completion:")
-                    @Suppress("UNCHECKED_CAST")
-                    val setMicrophoneFunc: (ObjCObject, Any?, Boolean, (NSError?) -> Unit) -> Unit = reinterpretCast(objc_msgSend)
-                    setMicrophoneFunc(currentWrapper, setMicrophoneSelector, enabled, block)
+                    // Используем обертки из cinterop
+                    (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.setMicrophoneEnabledCompletion(enabled, block)
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -173,10 +148,8 @@ actual class LiveKitManager {
                         continuation.resume(Unit)
                     }
                     
-                    val setCameraSelector = sel_registerName("setCameraEnabled:completion:")
-                    @Suppress("UNCHECKED_CAST")
-                    val setCameraFunc: (ObjCObject, Any?, Boolean, (NSError?) -> Unit) -> Unit = reinterpretCast(objc_msgSend)
-                    setCameraFunc(currentWrapper, setCameraSelector, enabled, block)
+                    // Используем обертки из cinterop
+                    (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.setCameraEnabledCompletion(enabled, block)
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -234,10 +207,7 @@ actual class LiveKitManager {
     private fun getLocalParticipantIdentity(): String? {
         val currentWrapper = wrapper ?: return null
         return try {
-            val selector = sel_registerName("getLocalParticipantIdentity")
-            @Suppress("UNCHECKED_CAST")
-            val func: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
-            func(currentWrapper, selector) as? String
+            (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.getLocalParticipantIdentity() as? String
         } catch (e: Exception) {
             null
         }
@@ -246,10 +216,7 @@ actual class LiveKitManager {
     private fun getLocalVideoTrack(): ObjCObject? {
         val currentWrapper = wrapper ?: return null
         return try {
-            val selector = sel_registerName("getLocalVideoTrack")
-            @Suppress("UNCHECKED_CAST")
-            val func: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
-            func(currentWrapper, selector) as? ObjCObject
+            (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.getLocalVideoTrack() as? ObjCObject
         } catch (e: Exception) {
             null
         }
@@ -258,10 +225,7 @@ actual class LiveKitManager {
     private fun isLocalCameraEnabled(): Boolean {
         val currentWrapper = wrapper ?: return false
         return try {
-            val selector = sel_registerName("isLocalCameraEnabled")
-            @Suppress("UNCHECKED_CAST")
-            val func: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
-            (func(currentWrapper, selector) as? NSNumber)?.boolValue ?: false
+            (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.isLocalCameraEnabled() ?: false
         } catch (e: Exception) {
             false
         }
@@ -270,10 +234,7 @@ actual class LiveKitManager {
     private fun getRemoteVideoTrack(participantId: String): ObjCObject? {
         val currentWrapper = wrapper ?: return null
         return try {
-            val selector = sel_registerName("getRemoteVideoTrackWithParticipantId:")
-            @Suppress("UNCHECKED_CAST")
-            val func: (ObjCObject, Any?, NSString) -> Any? = reinterpretCast(objc_msgSend)
-            func(currentWrapper, selector, participantId as NSString) as? ObjCObject
+            (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.getRemoteVideoTrackWithParticipantId(participantId as NSString) as? ObjCObject
         } catch (e: Exception) {
             null
         }
@@ -285,18 +246,8 @@ actual class LiveKitManager {
     }
     
     private fun setupDelegate(wrapper: ObjCObject) {
-        // Создаем объект-делегат через Objective-C runtime
-        // Для упрощения используем сам wrapper как делегат через блоки
-        // В реальности нужно создать отдельный класс-делегат
-        
-        // Устанавливаем делегат через setDelegate:
-        val setDelegateSelector = sel_registerName("setDelegate:")
-        // Создаем простой делегат-объект
-        // Для полноценной реализации нужно создать класс, реализующий протокол
-        // Пока используем nil, так как создание делегата в Kotlin/Native сложнее
+        // Устанавливаем делегат через обертки из cinterop
         // События будут обрабатываться через периодическое обновление
-        @Suppress("UNCHECKED_CAST")
-        val setDelegateFunc: (ObjCObject, Any?, ObjCObject?) -> Unit = reinterpretCast(objc_msgSend)
-        setDelegateFunc(wrapper, setDelegateSelector, null)
+        (wrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.setDelegate(null)
     }
 }

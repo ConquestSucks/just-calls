@@ -4,6 +4,7 @@ import com.justcalls.livekit.LiveKitParticipant
 import platform.Foundation.*
 import platform.objc.*
 import kotlinx.cinterop.*
+import com.justcalls.livekit.wrappers.*
 
 @OptIn(ExperimentalForeignApi::class)
 internal object ParticipantUpdaterIOS {
@@ -26,12 +27,11 @@ internal object ParticipantUpdaterIOS {
         participants: MutableList<LiveKitParticipant>
     ) {
         try {
-            @Suppress("UNCHECKED_CAST")
-            val identityFunc: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
-            val identity = identityFunc(wrapper, sel_registerName("getLocalParticipantIdentity")) as? String ?: "local"
-            val name = identityFunc(wrapper, sel_registerName("getLocalParticipantName")) as? String ?: identity
-            val isCameraEnabled = (identityFunc(wrapper, sel_registerName("isLocalCameraEnabled")) as? NSNumber)?.boolValue ?: false
-            val isMicrophoneEnabled = (identityFunc(wrapper, sel_registerName("isLocalMicrophoneEnabled")) as? NSNumber)?.boolValue ?: false
+            val liveKitWrapper = wrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper ?: return
+            val identity = liveKitWrapper.getLocalParticipantIdentity() as? String ?: "local"
+            val name = liveKitWrapper.getLocalParticipantName() as? String ?: identity
+            val isCameraEnabled = liveKitWrapper.isLocalCameraEnabled() ?: false
+            val isMicrophoneEnabled = liveKitWrapper.isLocalMicrophoneEnabled() ?: false
             
             participants.add(
                 LiveKitParticipant(
@@ -52,9 +52,8 @@ internal object ParticipantUpdaterIOS {
         participants: MutableList<LiveKitParticipant>
     ) {
         try {
-            @Suppress("UNCHECKED_CAST")
-            val getRemoteFunc: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
-            val remoteParticipants = getRemoteFunc(wrapper, sel_registerName("getRemoteParticipants")) as? NSArray
+            val liveKitWrapper = wrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper ?: return
+            val remoteParticipants = liveKitWrapper.getRemoteParticipants() as? NSArray
             if (remoteParticipants != null) {
                 for (i in 0 until remoteParticipants.count.toInt()) {
                     val participantDict = remoteParticipants.objectAtIndex(i.toULong()) as? NSDictionary

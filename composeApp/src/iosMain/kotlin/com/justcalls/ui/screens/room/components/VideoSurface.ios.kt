@@ -15,6 +15,7 @@ import platform.Foundation.*
 import platform.UIKit.UIView
 import platform.CoreGraphics.*
 import kotlinx.cinterop.*
+import com.justcalls.livekit.wrappers.*
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -71,46 +72,24 @@ actual fun VideoSurfaceView(
         // Отображаем видео через VideoViewWrapper
         UIKitView(
             factory = {
-                // Создаем VideoViewWrapper через Objective-C runtime
-                val wrapperClass = objc_getClass("VideoViewWrapper")
-                if (wrapperClass != null) {
-                    val allocSelector = sel_registerName("alloc")
-                    val initSelector = sel_registerName("initWithFrame:")
+                // Используем обертки из cinterop
+                memScoped {
+                    val frame = platform.CoreGraphics.CGRectMake(0.0, 0.0, 0.0, 0.0)
+                    val frameVar = alloc<platform.CoreGraphics.CGRectVar>()
+                    frameVar.value = frame
                     
-                    @Suppress("UNCHECKED_CAST")
-                    val allocFunc: (Any?, Any?) -> Any? = reinterpretCast(objc_msgSend)
-                    val allocResult = allocFunc(wrapperClass, allocSelector)
+                    val wrapper = com.justcalls.livekit.wrappers.VideoViewWrapper.alloc().initWithFrame(frameVar.value) as? UIView
                     
-                    var result: UIView? = null
-                    memScoped {
-                        val frame = platform.CoreGraphics.CGRectMake(0.0, 0.0, 0.0, 0.0)
-                        val frameVar = alloc<platform.CoreGraphics.CGRectVar>()
-                        frameVar.value = frame
-                        
-                        @Suppress("UNCHECKED_CAST")
-                        val initFunc: (Any?, Any?, platform.CoreGraphics.CGRectVar) -> Any? = reinterpretCast(objc_msgSend)
-                        result = initFunc(allocResult, initSelector, frameVar) as? UIView
-                    }
-                    
-                    val wrapper = result
                     if (wrapper != null && videoTrack != null) {
-                        val setTrackSelector = sel_registerName("setTrack:")
-                        @Suppress("UNCHECKED_CAST")
-                        val setTrackFunc: (UIView, Any?, ObjCObject?) -> Unit = reinterpretCast(objc_msgSend)
-                        setTrackFunc(wrapper, setTrackSelector, videoTrack)
+                        (wrapper as? com.justcalls.livekit.wrappers.VideoViewWrapper)?.setTrack(videoTrack as? ObjCObject)
                     }
                     
                     wrapper ?: UIView()
-                } else {
-                    UIView()
                 }
             },
             update = { view ->
                 // Обновляем трек при изменении
-                val setTrackSelector = sel_registerName("setTrack:")
-                @Suppress("UNCHECKED_CAST")
-                val setTrackFunc: (UIView, Any?, ObjCObject?) -> Unit = reinterpretCast(objc_msgSend)
-                setTrackFunc(view, setTrackSelector, videoTrack)
+                (view as? com.justcalls.livekit.wrappers.VideoViewWrapper)?.setTrack(videoTrack as? ObjCObject)
             },
             modifier = modifier
         )
