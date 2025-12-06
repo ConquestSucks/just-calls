@@ -27,15 +27,12 @@ actual fun VideoSurfaceView(
     
     if (surfaceId != null && liveKitManager != null) {
         val isLocal = surfaceId.startsWith("local:")
-        var videoTrack by remember { mutableStateOf<platform.objc.ObjCObject?>(null) }
+        var videoTrack by remember { mutableStateOf<ObjCObject?>(null) }
         
         LaunchedEffect(participantId, liveKitManager, isLocal) {
-            // В Kotlin/Native рефлексия работает по-другому
-            // Используем прямой вызов метода, так как getVideoTrack является публичным методом в actual классе
+            // Используем прямой вызов метода getVideoTrack из actual класса
             if (isLocal) {
                 try {
-                    // Получаем локальный видео трек через getVideoTrack
-                    // В iOS версии getVideoTrack доступен напрямую
                     @Suppress("UNCHECKED_CAST")
                     val manager = liveKitManager as? com.justcalls.livekit.LiveKitManager
                     val track = manager?.getVideoTrack(participantId)
@@ -47,7 +44,6 @@ actual fun VideoSurfaceView(
                 var attempts = 0
                 while (attempts < 20) {
                     try {
-                        // Получаем удаленный видео трек через getVideoTrack
                         @Suppress("UNCHECKED_CAST")
                         val manager = liveKitManager as? com.justcalls.livekit.LiveKitManager
                         val track = manager?.getVideoTrack(participantId)
@@ -79,16 +75,31 @@ actual fun VideoSurfaceView(
                 if (wrapperClass != null) {
                     val allocSelector = sel_registerName("alloc")
                     val initSelector = sel_registerName("initWithFrame:")
-                    val allocFunc = platform.objc.objc_msgSend as (Any?, platform.objc.ObjCSelector) -> Any?
-                    val allocResult = allocFunc(wrapperClass, allocSelector)
-                    val frame = platform.CoreGraphics.CGRectMake(0.0, 0.0, 0.0, 0.0)
-                    val initFunc = platform.objc.objc_msgSend as (Any?, platform.objc.ObjCSelector, platform.CoreGraphics.CGRect) -> Any?
-                    val wrapper = initFunc(allocResult, initSelector, frame) as? UIView
                     
-                    // Устанавливаем трек если он есть
+                    @Suppress("CAST_NEVER_SUCCEEDS")
+                    val allocFunc: (Any?, ObjCSelector) -> Any? = objc_msgSend as (Any?, ObjCSelector) -> Any?
+                    val allocResult = allocFunc(wrapperClass, allocSelector)
+                    
+                    var result: UIView? = null
+                    memScoped {
+                        val frameVar = alloc<platform.CoreGraphics.CGRectVar>()
+                        frameVar.point.x = 0.0
+                        frameVar.point.y = 0.0
+                        frameVar.size.width = 0.0
+                        frameVar.size.height = 0.0
+                        
+                        @Suppress("CAST_NEVER_SUCCEEDS")
+                        val initFunc: (Any?, ObjCSelector, platform.CoreGraphics.CGRectVar) -> Any? = 
+                            objc_msgSend as (Any?, ObjCSelector, platform.CoreGraphics.CGRectVar) -> Any?
+                        result = initFunc(allocResult, initSelector, frameVar) as? UIView
+                    }
+                    
+                    val wrapper = result
                     if (wrapper != null && videoTrack != null) {
                         val setTrackSelector = sel_registerName("setTrack:")
-                        val setTrackFunc = platform.objc.objc_msgSend as (UIView, platform.objc.ObjCSelector, platform.objc.ObjCObject?) -> Unit
+                        @Suppress("CAST_NEVER_SUCCEEDS")
+                        val setTrackFunc: (UIView, ObjCSelector, ObjCObject?) -> Unit = 
+                            objc_msgSend as (UIView, ObjCSelector, ObjCObject?) -> Unit
                         setTrackFunc(wrapper, setTrackSelector, videoTrack)
                     }
                     
@@ -100,7 +111,9 @@ actual fun VideoSurfaceView(
             update = { view ->
                 // Обновляем трек при изменении
                 val setTrackSelector = sel_registerName("setTrack:")
-                val setTrackFunc = platform.objc.objc_msgSend as (UIView, platform.objc.ObjCSelector, platform.objc.ObjCObject?) -> Unit
+                @Suppress("CAST_NEVER_SUCCEEDS")
+                val setTrackFunc: (UIView, ObjCSelector, ObjCObject?) -> Unit = 
+                    objc_msgSend as (UIView, ObjCSelector, ObjCObject?) -> Unit
                 setTrackFunc(view, setTrackSelector, videoTrack)
             },
             modifier = modifier

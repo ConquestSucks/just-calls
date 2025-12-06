@@ -8,7 +8,7 @@ import kotlinx.cinterop.*
 @OptIn(ExperimentalForeignApi::class)
 internal object ParticipantUpdaterIOS {
     
-    fun updateParticipants(wrapper: platform.objc.ObjCObject): List<LiveKitParticipant> {
+    fun updateParticipants(wrapper: ObjCObject): List<LiveKitParticipant> {
         val participants = mutableListOf<LiveKitParticipant>()
         
         try {
@@ -22,14 +22,16 @@ internal object ParticipantUpdaterIOS {
     }
     
     private fun addLocalParticipant(
-        wrapper: platform.objc.ObjCObject,
+        wrapper: ObjCObject,
         participants: MutableList<LiveKitParticipant>
     ) {
         try {
-            val identity = objc_msgSend(wrapper, sel_registerName("getLocalParticipantIdentity")) as? String ?: "local"
-            val name = objc_msgSend(wrapper, sel_registerName("getLocalParticipantName")) as? String ?: identity
-            val isCameraEnabled = objc_msgSend(wrapper, sel_registerName("isLocalCameraEnabled")) as? Boolean ?: false
-            val isMicrophoneEnabled = objc_msgSend(wrapper, sel_registerName("isLocalMicrophoneEnabled")) as? Boolean ?: false
+            @Suppress("CAST_NEVER_SUCCEEDS")
+            val identityFunc: (ObjCObject, ObjCSelector) -> Any? = objc_msgSend as (ObjCObject, ObjCSelector) -> Any?
+            val identity = identityFunc(wrapper, sel_registerName("getLocalParticipantIdentity")) as? String ?: "local"
+            val name = identityFunc(wrapper, sel_registerName("getLocalParticipantName")) as? String ?: identity
+            val isCameraEnabled = (identityFunc(wrapper, sel_registerName("isLocalCameraEnabled")) as? NSNumber)?.boolValue ?: false
+            val isMicrophoneEnabled = (identityFunc(wrapper, sel_registerName("isLocalMicrophoneEnabled")) as? NSNumber)?.boolValue ?: false
             
             participants.add(
                 LiveKitParticipant(
@@ -46,11 +48,13 @@ internal object ParticipantUpdaterIOS {
     }
     
     private fun addRemoteParticipants(
-        wrapper: platform.objc.ObjCObject,
+        wrapper: ObjCObject,
         participants: MutableList<LiveKitParticipant>
     ) {
         try {
-            val remoteParticipants = objc_msgSend(wrapper, sel_registerName("getRemoteParticipants")) as? NSArray
+            @Suppress("CAST_NEVER_SUCCEEDS")
+            val getRemoteFunc: (ObjCObject, ObjCSelector) -> Any? = objc_msgSend as (ObjCObject, ObjCSelector) -> Any?
+            val remoteParticipants = getRemoteFunc(wrapper, sel_registerName("getRemoteParticipants")) as? NSArray
             if (remoteParticipants != null) {
                 for (i in 0 until remoteParticipants.count.toInt()) {
                     val participantDict = remoteParticipants.objectAtIndex(i.toULong()) as? NSDictionary
