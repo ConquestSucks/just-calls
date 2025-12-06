@@ -16,6 +16,7 @@ import platform.Foundation.*
 import platform.objc.*
 import platform.CoreGraphics.*
 import kotlinx.cinterop.*
+import com.justcalls.livekit.wrappers.*
 
 @OptIn(ExperimentalForeignApi::class)
 actual class LiveKitManager {
