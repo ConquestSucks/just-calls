@@ -26,7 +26,6 @@ class RoomService(
 ) {
 
     private suspend fun <T> executeWithTokenRefresh(
-        requestName: String,
         block: suspend () -> T
     ): Result<T> {
         return try {
@@ -69,7 +68,7 @@ class RoomService(
     }
 
     suspend fun createRoom(title: String): Result<ApiResult<String>> {
-        return executeWithTokenRefresh("createRoom") {
+        return executeWithTokenRefresh {
             val authHeader = apiClient.getAuthHeader()
             val url = "${apiClient.baseUrl}/room/"
 
@@ -87,7 +86,7 @@ class RoomService(
     }
 
     suspend fun getRooms(): Result<ApiResult<List<RoomDto>>> {
-        return executeWithTokenRefresh("getRooms") {
+        return executeWithTokenRefresh {
             val authHeader = apiClient.getAuthHeader()
             val url = "${apiClient.baseUrl}/room/"
 
@@ -103,7 +102,7 @@ class RoomService(
     }
 
     suspend fun getRoomToken(roomKey: String): Result<ApiResult<RoomTokenResult>> {
-        return executeWithTokenRefresh("getRoomToken") {
+        return executeWithTokenRefresh {
             val authHeader = apiClient.getAuthHeader()
             val url = "${apiClient.baseUrl}/room/token"
 

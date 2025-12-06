@@ -4,7 +4,6 @@ import com.justcalls.data.models.requests.CompleteRequest
 import com.justcalls.data.models.requests.SignInRequest
 import com.justcalls.data.models.requests.SignUpRequest
 import com.justcalls.data.network.AuthService
-import com.justcalls.utils.NetworkErrorHandler
 import com.justcalls.utils.NetworkErrorHandler.getErrorMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

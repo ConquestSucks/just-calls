@@ -11,18 +11,6 @@ data class RoomDto(
 )
 
 @Serializable
-data class RoomUserDto(
-    val identity: String,
-    val displayName: String
-)
-
-@Serializable
-data class RoomInfoDto(
-    val title: String? = null,
-    val users: List<RoomUserDto>
-)
-
-@Serializable
 data class IceServerDto(
     val urls: List<String>
 )

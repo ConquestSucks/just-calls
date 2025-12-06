@@ -28,12 +28,8 @@ class AuthService(
     private val tokenStorage: TokenStorage
 ) {
     private suspend fun <T> executeWithTokenRefresh(
-        requestName: String,
         request: suspend () -> Result<ApiResult<T>>
     ): Result<ApiResult<T>> {
-        val currentAccessToken = tokenStorage.getAccessToken()
-        val currentRefreshToken = tokenStorage.getRefreshToken()
-        
         val result = request()
         
         var shouldRefresh = false
@@ -188,7 +184,7 @@ class AuthService(
     }
     
     suspend fun getUser(): Result<ApiResult<UserResponse>> {
-        return executeWithTokenRefresh("getUser") {
+        return executeWithTokenRefresh {
             try {
                 val authHeader = apiClient.getAuthHeader()
                 val url = "${apiClient.baseUrl}/user"
@@ -209,7 +205,7 @@ class AuthService(
     }
     
     suspend fun updateUser(request: UpdateUserRequest): Result<ApiResult<UserResponse>> {
-        return executeWithTokenRefresh("updateUser") {
+        return executeWithTokenRefresh {
             try {
                 val authHeader = apiClient.getAuthHeader()
                 val url = "${apiClient.baseUrl}/user"

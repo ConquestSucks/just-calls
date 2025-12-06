@@ -11,13 +11,9 @@ expect class LiveKitManager() {
     
     fun setCameraEnabled(enabled: Boolean)
     
-    fun getParticipants(): List<LiveKitParticipant>
-    
     fun observeParticipants(callback: (List<LiveKitParticipant>) -> Unit)
     
     fun getVideoSurface(participantId: String): Any?
-    
-    fun getEglBaseContext(): Any?
 }
 
 data class LiveKitParticipant(

@@ -151,10 +151,6 @@ actual class LiveKitManager {
         }
     }
     
-    actual fun getParticipants(): List<LiveKitParticipant> {
-        return _participants.value
-    }
-    
     actual fun observeParticipants(callback: (List<LiveKitParticipant>) -> Unit) {
         participantsCallback = callback
         callback(_participants.value)
@@ -172,7 +168,7 @@ actual class LiveKitManager {
                 
                 val localParticipant = currentRoom.localParticipant
                 val localVideoTrack = localParticipant.videoTrackPublications.let { pubs ->
-                    VideoTrackExtractor.extractLocalVideoTrack(pubs, participantId)
+                    VideoTrackExtractor.extractLocalVideoTrack(pubs)
                 }
                 
                 if (localVideoTrack != null) {
@@ -198,8 +194,7 @@ actual class LiveKitManager {
                     }
                     
                     val videoTrack = VideoTrackExtractor.extractRemoteVideoTrack(
-                        remoteParticipant.videoTrackPublications,
-                        participantId
+                        remoteParticipant.videoTrackPublications
                     )
                     
                     if (videoTrack != null) {
@@ -217,41 +212,6 @@ actual class LiveKitManager {
     
     fun getVideoTrack(participantId: String): VideoTrack? {
         return videoTracks[participantId]
-    }
-    
-    fun getLocalVideoTrack(participantId: String): LocalVideoTrack? {
-        localVideoTracks[participantId]?.let {
-            return it
-        }
-        
-        val localParticipant = room?.localParticipant
-        if (localParticipant != null) {
-            try {
-                val cameraVideoTrackMethod = localParticipant.javaClass.getMethod("cameraVideoTrack")
-                val cameraTrack = cameraVideoTrackMethod.invoke(localParticipant) as? LocalVideoTrack
-                if (cameraTrack != null) {
-                    localVideoTracks[participantId] = cameraTrack
-                    return cameraTrack
-                }
-            } catch (e: Exception) {
-                // Ignore
-            }
-            
-            val localVideoTrack = localParticipant.videoTrackPublications.let { pubs ->
-                VideoTrackExtractor.extractLocalVideoTrack(pubs, participantId)
-            }
-            
-            if (localVideoTrack != null) {
-                localVideoTracks[participantId] = localVideoTrack
-                return localVideoTrack
-            }
-        }
-        
-        return null
-    }
-    
-    actual fun getEglBaseContext(): Any? {
-        return null
     }
     
     fun getRoom(): Room? {

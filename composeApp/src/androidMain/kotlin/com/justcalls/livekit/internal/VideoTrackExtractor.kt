@@ -25,8 +25,7 @@ internal object VideoTrackExtractor {
     }
     
     fun extractLocalVideoTrack(
-        publications: Any?,
-        participantId: String
+        publications: Any?
     ): LocalVideoTrack? {
         if (publications == null) {
             return null
@@ -106,8 +105,7 @@ internal object VideoTrackExtractor {
     }
     
     fun extractRemoteVideoTrack(
-        publications: Any,
-        participantId: String
+        publications: Any
     ): VideoTrack? {
         return try {
             val publication: RemoteTrackPublication? = when (publications) {

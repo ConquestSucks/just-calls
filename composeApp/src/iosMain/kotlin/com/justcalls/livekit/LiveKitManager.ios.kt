@@ -19,20 +19,12 @@ actual class LiveKitManager {
         // Not implemented for iOS yet
     }
     
-    actual fun getParticipants(): List<LiveKitParticipant> {
-        return emptyList()
-    }
-    
     actual fun observeParticipants(callback: (List<LiveKitParticipant>) -> Unit) {
         callback(emptyList())
     }
     
     actual fun getVideoSurface(participantId: String): Any? {
         return null
-    }
-    
-    actual fun getEglBaseContext(): Any? {
-        return null // EGL контекст не используется на iOS
     }
 }
 
