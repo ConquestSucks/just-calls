@@ -60,11 +60,9 @@ actual class LiveKitManager {
                 }
                 
                 // Используем обертки из cinterop согласно документации Kotlin/Native
-                // Метод connectWithUrl:token:completion: транслируется согласно правилам именования
+                // Метод connectWithUrl:token:completion: транслируется в connectWithUrl(url:token:completion:)
                 val liveKitWrapper = newWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                // Согласно документации, метод может быть доступен как connectWithUrlTokenCompletion
-                // или с параметрами в скобках. Пробуем оба варианта.
-                liveKitWrapper?.connectWithUrlTokenCompletion(serverUrl, tokenResult.token, block)
+                liveKitWrapper?.connectWithUrl(url = serverUrl, token = tokenResult.token, completion = block)
             }
             
             this.wrapper = newWrapper
@@ -125,9 +123,9 @@ actual class LiveKitManager {
                     }
                     
                     // Используем обертки из cinterop согласно документации Kotlin/Native
-                    // Метод setMicrophoneEnabled:completion: транслируется в setMicrophoneEnabledCompletion
+                    // Метод setMicrophoneEnabled:completion: транслируется в setMicrophoneEnabled(enabled:completion:)
                     val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                    liveKitWrapper?.setMicrophoneEnabledCompletion(enabled, block)
+                    liveKitWrapper?.setMicrophoneEnabled(enabled = enabled, completion = block)
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -152,9 +150,9 @@ actual class LiveKitManager {
                     }
                     
                     // Используем обертки из cinterop согласно документации Kotlin/Native
-                    // Метод setCameraEnabled:completion: транслируется в setCameraEnabledCompletion
+                    // Метод setCameraEnabled:completion: транслируется в setCameraEnabled(enabled:completion:)
                     val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                    liveKitWrapper?.setCameraEnabledCompletion(enabled, block)
+                    liveKitWrapper?.setCameraEnabled(enabled = enabled, completion = block)
                 }
             } catch (e: Exception) {
                 // Ignore
