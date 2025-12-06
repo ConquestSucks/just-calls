@@ -6,7 +6,7 @@ import platform.objc.*
 import kotlinx.cinterop.*
 import com.justcalls.livekit.wrappers.*
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
 internal object ParticipantUpdaterIOS {
     
     fun updateParticipants(wrapper: ObjCObject): List<LiveKitParticipant> {

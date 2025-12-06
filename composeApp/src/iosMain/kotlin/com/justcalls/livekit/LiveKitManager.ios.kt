@@ -18,7 +18,7 @@ import platform.CoreGraphics.*
 import kotlinx.cinterop.*
 import com.justcalls.livekit.wrappers.*
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
 actual class LiveKitManager {
     private var wrapper: ObjCObject? = null
     private var delegateImpl: ObjCObject? = null

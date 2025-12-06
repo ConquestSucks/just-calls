@@ -17,7 +17,7 @@ import platform.CoreGraphics.*
 import kotlinx.cinterop.*
 import com.justcalls.livekit.wrappers.*
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
 @Composable
 actual fun VideoSurfaceView(
     videoSurface: Any?,
