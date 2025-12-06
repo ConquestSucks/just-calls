@@ -27,7 +27,7 @@ internal object ParticipantUpdaterIOS {
     ) {
         try {
             @Suppress("UNCHECKED_CAST")
-            val identityFunc = objc_msgSend as (ObjCObject, Any?) -> Any?
+            val identityFunc: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
             val identity = identityFunc(wrapper, sel_registerName("getLocalParticipantIdentity")) as? String ?: "local"
             val name = identityFunc(wrapper, sel_registerName("getLocalParticipantName")) as? String ?: identity
             val isCameraEnabled = (identityFunc(wrapper, sel_registerName("isLocalCameraEnabled")) as? NSNumber)?.boolValue ?: false
@@ -53,7 +53,7 @@ internal object ParticipantUpdaterIOS {
     ) {
         try {
             @Suppress("UNCHECKED_CAST")
-            val getRemoteFunc = objc_msgSend as (ObjCObject, Any?) -> Any?
+            val getRemoteFunc: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
             val remoteParticipants = getRemoteFunc(wrapper, sel_registerName("getRemoteParticipants")) as? NSArray
             if (remoteParticipants != null) {
                 for (i in 0 until remoteParticipants.count.toInt()) {

@@ -52,18 +52,18 @@ actual class LiveKitManager {
             val initSelector = sel_registerName("init")
             
             @Suppress("UNCHECKED_CAST")
-            val allocFunc = objc_msgSend as (Any?, Any?) -> Any?
+            val allocFunc: (Any?, Any?) -> Any? = reinterpretCast(objc_msgSend)
             val allocResult = allocFunc(wrapperClass, allocSelector)
             
             @Suppress("UNCHECKED_CAST")
-            val initFunc = objc_msgSend as (Any?, Any?) -> Any?
+            val initFunc: (Any?, Any?) -> Any? = reinterpretCast(objc_msgSend)
             val newWrapper = initFunc(allocResult, initSelector) as? ObjCObject
                 ?: throw Exception("Failed to create LiveKitWrapper instance")
             
             // Создаем комнату
             val createRoomSelector = sel_registerName("createRoom")
             @Suppress("UNCHECKED_CAST")
-            val createRoomFunc = objc_msgSend as (ObjCObject, Any?) -> Unit
+            val createRoomFunc: (ObjCObject, Any?) -> Unit = reinterpretCast(objc_msgSend)
             createRoomFunc(newWrapper, createRoomSelector)
             
             // Подключаемся к комнате
@@ -83,7 +83,7 @@ actual class LiveKitManager {
                 // Вызываем метод с блоком
                 val connectSelector = sel_registerName("connectWithUrl:token:completion:")
                 @Suppress("UNCHECKED_CAST")
-                val connectFunc = objc_msgSend as (ObjCObject, Any?, NSString, NSString, (NSError?) -> Unit) -> Unit
+                val connectFunc: (ObjCObject, Any?, NSString, NSString, (NSError?) -> Unit) -> Unit = reinterpretCast(objc_msgSend)
                 connectFunc(newWrapper, connectSelector, urlString, tokenString, block)
             }
             
@@ -121,7 +121,7 @@ actual class LiveKitManager {
                     
                     val disconnectSelector = sel_registerName("disconnectWithCompletion:")
                     @Suppress("UNCHECKED_CAST")
-                    val disconnectFunc = objc_msgSend as (ObjCObject, Any?, () -> Unit) -> Unit
+                    val disconnectFunc: (ObjCObject, Any?, () -> Unit) -> Unit = reinterpretCast(objc_msgSend)
                     disconnectFunc(currentWrapper, disconnectSelector, block)
                 }
             }
@@ -148,7 +148,7 @@ actual class LiveKitManager {
                     
                     val setMicrophoneSelector = sel_registerName("setMicrophoneEnabled:completion:")
                     @Suppress("UNCHECKED_CAST")
-                    val setMicrophoneFunc = objc_msgSend as (ObjCObject, Any?, Boolean, (NSError?) -> Unit) -> Unit
+                    val setMicrophoneFunc: (ObjCObject, Any?, Boolean, (NSError?) -> Unit) -> Unit = reinterpretCast(objc_msgSend)
                     setMicrophoneFunc(currentWrapper, setMicrophoneSelector, enabled, block)
                 }
             } catch (e: Exception) {
@@ -175,7 +175,7 @@ actual class LiveKitManager {
                     
                     val setCameraSelector = sel_registerName("setCameraEnabled:completion:")
                     @Suppress("UNCHECKED_CAST")
-                    val setCameraFunc = objc_msgSend as (ObjCObject, Any?, Boolean, (NSError?) -> Unit) -> Unit
+                    val setCameraFunc: (ObjCObject, Any?, Boolean, (NSError?) -> Unit) -> Unit = reinterpretCast(objc_msgSend)
                     setCameraFunc(currentWrapper, setCameraSelector, enabled, block)
                 }
             } catch (e: Exception) {
@@ -236,7 +236,7 @@ actual class LiveKitManager {
         return try {
             val selector = sel_registerName("getLocalParticipantIdentity")
             @Suppress("UNCHECKED_CAST")
-            val func = objc_msgSend as (ObjCObject, Any?) -> Any?
+            val func: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
             func(currentWrapper, selector) as? String
         } catch (e: Exception) {
             null
@@ -248,7 +248,7 @@ actual class LiveKitManager {
         return try {
             val selector = sel_registerName("getLocalVideoTrack")
             @Suppress("UNCHECKED_CAST")
-            val func = objc_msgSend as (ObjCObject, Any?) -> Any?
+            val func: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
             func(currentWrapper, selector) as? ObjCObject
         } catch (e: Exception) {
             null
@@ -260,7 +260,7 @@ actual class LiveKitManager {
         return try {
             val selector = sel_registerName("isLocalCameraEnabled")
             @Suppress("UNCHECKED_CAST")
-            val func = objc_msgSend as (ObjCObject, Any?) -> Any?
+            val func: (ObjCObject, Any?) -> Any? = reinterpretCast(objc_msgSend)
             (func(currentWrapper, selector) as? NSNumber)?.boolValue ?: false
         } catch (e: Exception) {
             false
@@ -272,7 +272,7 @@ actual class LiveKitManager {
         return try {
             val selector = sel_registerName("getRemoteVideoTrackWithParticipantId:")
             @Suppress("UNCHECKED_CAST")
-            val func = objc_msgSend as (ObjCObject, Any?, NSString) -> Any?
+            val func: (ObjCObject, Any?, NSString) -> Any? = reinterpretCast(objc_msgSend)
             func(currentWrapper, selector, participantId as NSString) as? ObjCObject
         } catch (e: Exception) {
             null
@@ -296,7 +296,7 @@ actual class LiveKitManager {
         // Пока используем nil, так как создание делегата в Kotlin/Native сложнее
         // События будут обрабатываться через периодическое обновление
         @Suppress("UNCHECKED_CAST")
-        val setDelegateFunc = objc_msgSend as (ObjCObject, Any?, ObjCObject?) -> Unit
+        val setDelegateFunc: (ObjCObject, Any?, ObjCObject?) -> Unit = reinterpretCast(objc_msgSend)
         setDelegateFunc(wrapper, setDelegateSelector, null)
     }
 }

@@ -78,7 +78,7 @@ actual fun VideoSurfaceView(
                     val initSelector = sel_registerName("initWithFrame:")
                     
                     @Suppress("UNCHECKED_CAST")
-                    val allocFunc = objc_msgSend as (Any?, Any?) -> Any?
+                    val allocFunc: (Any?, Any?) -> Any? = reinterpretCast(objc_msgSend)
                     val allocResult = allocFunc(wrapperClass, allocSelector)
                     
                     var result: UIView? = null
@@ -88,7 +88,7 @@ actual fun VideoSurfaceView(
                         frameVar.value = frame
                         
                         @Suppress("UNCHECKED_CAST")
-                        val initFunc = objc_msgSend as (Any?, Any?, platform.CoreGraphics.CGRectVar) -> Any?
+                        val initFunc: (Any?, Any?, platform.CoreGraphics.CGRectVar) -> Any? = reinterpretCast(objc_msgSend)
                         result = initFunc(allocResult, initSelector, frameVar) as? UIView
                     }
                     
@@ -96,7 +96,7 @@ actual fun VideoSurfaceView(
                     if (wrapper != null && videoTrack != null) {
                         val setTrackSelector = sel_registerName("setTrack:")
                         @Suppress("UNCHECKED_CAST")
-                        val setTrackFunc = objc_msgSend as (UIView, Any?, ObjCObject?) -> Unit
+                        val setTrackFunc: (UIView, Any?, ObjCObject?) -> Unit = reinterpretCast(objc_msgSend)
                         setTrackFunc(wrapper, setTrackSelector, videoTrack)
                     }
                     
@@ -109,7 +109,7 @@ actual fun VideoSurfaceView(
                 // Обновляем трек при изменении
                 val setTrackSelector = sel_registerName("setTrack:")
                 @Suppress("UNCHECKED_CAST")
-                val setTrackFunc = objc_msgSend as (UIView, Any?, ObjCObject?) -> Unit
+                val setTrackFunc: (UIView, Any?, ObjCObject?) -> Unit = reinterpretCast(objc_msgSend)
                 setTrackFunc(view, setTrackSelector, videoTrack)
             },
             modifier = modifier
