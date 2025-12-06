@@ -60,10 +60,9 @@ actual class LiveKitManager {
                 }
                 
                 // Вызываем метод с блоком используя обертки из cinterop
-                // Метод connectWithUrl:token:completion: транслируется в connectWithUrlTokenCompletion
-                // Параметры передаются как именованные: url, token, completion
+                // Метод connectWithUrl:token:completion: транслируется в connectWithUrl(token:completion:)
                 val liveKitWrapper = newWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                liveKitWrapper?.connectWithUrlTokenCompletion(
+                liveKitWrapper?.connectWithUrl(
                     url = serverUrl,
                     token = tokenResult.token,
                     completion = block
@@ -128,9 +127,9 @@ actual class LiveKitManager {
                     }
                     
                     // Используем обертки из cinterop
-                    // Метод setMicrophoneEnabled:completion: транслируется в setMicrophoneEnabledCompletion
+                    // Метод setMicrophoneEnabled:completion: транслируется в setMicrophoneEnabled(completion:)
                     val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                    liveKitWrapper?.setMicrophoneEnabledCompletion(
+                    liveKitWrapper?.setMicrophoneEnabled(
                         enabled = enabled,
                         completion = block
                     )
@@ -158,9 +157,9 @@ actual class LiveKitManager {
                     }
                     
                     // Используем обертки из cinterop
-                    // Метод setCameraEnabled:completion: транслируется в setCameraEnabledCompletion
+                    // Метод setCameraEnabled:completion: транслируется в setCameraEnabled(completion:)
                     val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                    liveKitWrapper?.setCameraEnabledCompletion(
+                    liveKitWrapper?.setCameraEnabled(
                         enabled = enabled,
                         completion = block
                     )

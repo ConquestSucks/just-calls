@@ -77,16 +77,25 @@ actual fun VideoSurfaceView(
                 val wrapper = com.justcalls.livekit.wrappers.VideoViewWrapper(frame) as? UIView
                 
                 if (wrapper != null && videoTrack != null) {
-                    // setTrack принимает VideoTrack?, а не ObjCObject?
-                    // videoTrack уже является ObjCObject?, нужно привести к правильному типу
-                    (wrapper as? com.justcalls.livekit.wrappers.VideoViewWrapper)?.setTrack(videoTrack)
+                    // setTrack принимает VideoTrack?, но VideoTrack - это forward declaration
+                    // Используем ObjCObject напрямую, так как VideoTrack не экспортирован в cinterop
+                    val videoViewWrapper = wrapper as? com.justcalls.livekit.wrappers.VideoViewWrapper
+                    // Приводим ObjCObject? к нужному типу через unsafe cast
+                    @Suppress("UNCHECKED_CAST")
+                    val track = videoTrack as? ObjCObject
+                    @Suppress("UNCHECKED_CAST")
+                    videoViewWrapper?.setTrack(track as? Any)
                 }
                 
                 wrapper ?: UIView()
             },
             update = { view ->
                 // Обновляем трек при изменении
-                (view as? com.justcalls.livekit.wrappers.VideoViewWrapper)?.setTrack(videoTrack)
+                val videoViewWrapper = view as? com.justcalls.livekit.wrappers.VideoViewWrapper
+                @Suppress("UNCHECKED_CAST")
+                val track = videoTrack as? ObjCObject
+                @Suppress("UNCHECKED_CAST")
+                videoViewWrapper?.setTrack(track as? Any)
             },
             modifier = modifier
         )
