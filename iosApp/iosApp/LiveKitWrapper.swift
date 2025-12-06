@@ -1,7 +1,7 @@
 import Foundation
 import LiveKit
 
-@objc public final class LiveKitWrapper: NSObject {
+@objc public final class LiveKitWrapper: NSObject, @unchecked Sendable {
     private var room: Room?
     private var delegate: LiveKitWrapperDelegate?
     
@@ -109,7 +109,13 @@ import LiveKit
     
     @objc public func getLocalVideoTrack() -> VideoTrack? {
         guard let room = self.room else { return nil }
-        return room.localParticipant.mainVideoPublication?.track as? VideoTrack
+        // Ищем первый видео трек в публикациях
+        for (_, publication) in room.localParticipant.trackPublications {
+            if publication.kind == .video, let track = publication.track as? VideoTrack {
+                return track
+            }
+        }
+        return nil
     }
     
     @objc public func getRemoteParticipants() -> [[String: Any]] {
@@ -121,8 +127,17 @@ import LiveKit
             participantDict["identity"] = participant.identity?.description ?? ""
             participantDict["name"] = participant.name ?? ""
             
-            let hasVideo = participant.videoTrackPublications.values.contains { !$0.isMuted }
-            let hasAudio = participant.audioTrackPublications.values.contains { !$0.isMuted }
+            // Проверяем наличие видео и аудио треков в публикациях
+            var hasVideo = false
+            var hasAudio = false
+            for (_, publication) in participant.trackPublications {
+                if publication.kind == .video && !publication.isMuted {
+                    hasVideo = true
+                }
+                if publication.kind == .audio && !publication.isMuted {
+                    hasAudio = true
+                }
+            }
             participantDict["isCameraEnabled"] = hasVideo
             participantDict["isMicrophoneEnabled"] = hasAudio
             
@@ -132,20 +147,21 @@ import LiveKit
         return participants
     }
     
-    @objc public func getRemoteVideoTrack(participantId: String) -> VideoTrack? {
+    @objc public func getRemoteVideoTrackWithParticipantId(_ participantId: NSString) -> VideoTrack? {
         guard let room = self.room else { return nil }
         
         for (_, participant) in room.remoteParticipants {
-            if participant.identity?.description == participantId {
-                return participant.mainVideoPublication?.track as? VideoTrack
+            if participant.identity?.description == participantId as String {
+                // Ищем первый видео трек в публикациях
+                for (_, publication) in participant.trackPublications {
+                    if publication.kind == .video, let track = publication.track as? VideoTrack {
+                        return track
+                    }
+                }
             }
         }
         
         return nil
-    }
-    
-    @objc public func getRemoteVideoTrackWithParticipantId(_ participantId: NSString) -> VideoTrack? {
-        return getRemoteVideoTrack(participantId: participantId as String)
     }
     
     @objc public func setDelegate(_ delegate: LiveKitWrapperDelegate?) {
