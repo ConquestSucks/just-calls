@@ -56,8 +56,12 @@ fun VerificationCodeField(
                 BasicTextField(
                     value = value,
                     onValueChange = { newValue ->
-                        if (enabled && newValue.all { it.isDigit() } && newValue.length <= 6) {
-                            onValueChange(newValue)
+                        // Разрешаем только заглавные латинские буквы и цифры, максимум 6 символов
+                        val filtered = newValue.uppercase().filter { 
+                            (it.isLetter() && it in 'A'..'Z') || it.isDigit() 
+                        }.take(6)
+                        if (enabled) {
+                            onValueChange(filtered)
                         }
                     },
                     modifier = Modifier
@@ -81,7 +85,7 @@ fun VerificationCodeField(
                         }
                         innerTextField()
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                     singleLine = true
                 )
             }

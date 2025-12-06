@@ -20,7 +20,7 @@ object AuthValidation {
     fun validateVerificationCode(code: String): String? {
         return when {
             code.isBlank() -> "Код обязателен"
-            code.length != 6 -> "Код должен содержать 6 цифр"
+            !code.all { it.isUpperCase() && it.isLetter() && it in 'A'..'Z' || it.isDigit() } -> "Код должен содержать только заглавные латинские буквы и цифры"
             else -> null
         }
     }
