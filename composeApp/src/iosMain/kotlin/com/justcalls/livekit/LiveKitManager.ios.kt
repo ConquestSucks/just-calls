@@ -113,22 +113,37 @@ actual class LiveKitManager {
     actual fun setMicrophoneEnabled(enabled: Boolean) {
         scope.launch {
             try {
-                val currentWrapper = wrapper ?: return@launch
+                val currentWrapper = wrapper
+                if (currentWrapper == null) {
+                    println("LiveKitManager: wrapper is null, cannot set microphone")
+                    return@launch
+                }
+                
                 suspendCancellableCoroutine<Unit> { continuation ->
                     val block: (NSError?) -> Unit = { error ->
-                        if (error == null) {
+                        if (error != null) {
+                            println("LiveKitManager: setMicrophoneEnabled error: ${error.localizedDescription}")
+                        } else {
+                            println("LiveKitManager: setMicrophoneEnabled success: $enabled")
                             updateParticipants()
                         }
                         continuation.resume(Unit)
                     }
                     
                     // Используем обертки из cinterop согласно документации Kotlin/Native
-                    // Метод setMicrophoneEnabled:completion: транслируется в setMicrophoneEnabled(enabled:completion:)
+                    // Используем позиционные параметры вместо именованных
                     val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                    liveKitWrapper?.setMicrophoneEnabled(enabled = enabled, completion = block)
+                    if (liveKitWrapper == null) {
+                        println("LiveKitManager: failed to cast wrapper to LiveKitWrapper")
+                        continuation.resume(Unit)
+                    } else {
+                        println("LiveKitManager: calling setMicrophoneEnabled($enabled)")
+                        liveKitWrapper.setMicrophoneEnabled(enabled, block)
+                    }
                 }
             } catch (e: Exception) {
-                // Ignore
+                println("LiveKitManager: setMicrophoneEnabled exception: ${e.message}")
+                e.printStackTrace()
             }
         }
     }
@@ -136,10 +151,18 @@ actual class LiveKitManager {
     actual fun setCameraEnabled(enabled: Boolean) {
         scope.launch {
             try {
-                val currentWrapper = wrapper ?: return@launch
+                val currentWrapper = wrapper
+                if (currentWrapper == null) {
+                    println("LiveKitManager: wrapper is null, cannot set camera")
+                    return@launch
+                }
+                
                 suspendCancellableCoroutine<Unit> { continuation ->
                     val block: (NSError?) -> Unit = { error ->
-                        if (error == null) {
+                        if (error != null) {
+                            println("LiveKitManager: setCameraEnabled error: ${error.localizedDescription}")
+                        } else {
+                            println("LiveKitManager: setCameraEnabled success: $enabled")
                             if (!enabled) {
                                 val localIdentity = getLocalParticipantIdentity()
                                 localIdentity?.let { localVideoTracks.remove(it) }
@@ -150,12 +173,19 @@ actual class LiveKitManager {
                     }
                     
                     // Используем обертки из cinterop согласно документации Kotlin/Native
-                    // Метод setCameraEnabled:completion: транслируется в setCameraEnabled(enabled:completion:)
+                    // Используем позиционные параметры вместо именованных
                     val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                    liveKitWrapper?.setCameraEnabled(enabled = enabled, completion = block)
+                    if (liveKitWrapper == null) {
+                        println("LiveKitManager: failed to cast wrapper to LiveKitWrapper")
+                        continuation.resume(Unit)
+                    } else {
+                        println("LiveKitManager: calling setCameraEnabled($enabled)")
+                        liveKitWrapper.setCameraEnabled(enabled, block)
+                    }
                 }
             } catch (e: Exception) {
-                // Ignore
+                println("LiveKitManager: setCameraEnabled exception: ${e.message}")
+                e.printStackTrace()
             }
         }
     }

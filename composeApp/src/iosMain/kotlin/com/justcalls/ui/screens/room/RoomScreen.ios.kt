@@ -19,11 +19,15 @@ actual fun rememberPermissionLauncher(
                     // Явно запрашиваем разрешение на камеру перед включением
                     @Suppress("UNCHECKED_CAST")
                     val manager = liveKitManager as? com.justcalls.livekit.LiveKitManager
+                    println("RoomScreen.ios: Requesting camera permission")
                     manager?.requestCameraPermission { granted ->
+                        println("RoomScreen.ios: Camera permission granted: $granted")
                         if (granted) {
-                            if (isCameraEnabled) {
-                                liveKitManager.setCameraEnabled(true)
-                            }
+                            // После получения разрешения всегда включаем камеру
+                            // (пользователь нажал кнопку для включения)
+                            onCameraChanged(true)
+                            println("RoomScreen.ios: Calling setCameraEnabled(true)")
+                            liveKitManager.setCameraEnabled(true)
                         } else {
                             onCameraChanged(false)
                             onError("Требуется разрешение на использование камеры")
@@ -34,11 +38,15 @@ actual fun rememberPermissionLauncher(
                     // Явно запрашиваем разрешение на микрофон перед включением
                     @Suppress("UNCHECKED_CAST")
                     val manager = liveKitManager as? com.justcalls.livekit.LiveKitManager
+                    println("RoomScreen.ios: Requesting microphone permission")
                     manager?.requestMicrophonePermission { granted ->
+                        println("RoomScreen.ios: Microphone permission granted: $granted")
                         if (granted) {
-                            if (isMicrophoneEnabled) {
-                                liveKitManager.setMicrophoneEnabled(true)
-                            }
+                            // После получения разрешения всегда включаем микрофон
+                            // (пользователь нажал кнопку для включения)
+                            onMicrophoneChanged(true)
+                            println("RoomScreen.ios: Calling setMicrophoneEnabled(true)")
+                            liveKitManager.setMicrophoneEnabled(true)
                         } else {
                             onMicrophoneChanged(false)
                             onError("Требуется разрешение на использование микрофона")
