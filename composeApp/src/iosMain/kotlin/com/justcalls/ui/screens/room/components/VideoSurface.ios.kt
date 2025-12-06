@@ -32,7 +32,6 @@ actual fun VideoSurfaceView(
         var videoTrack by remember { mutableStateOf<ObjCObject?>(null) }
         
         LaunchedEffect(participantId, liveKitManager, isLocal) {
-            // Используем прямой вызов метода getVideoTrack из actual класса
             if (isLocal) {
                 try {
                     @Suppress("UNCHECKED_CAST")
@@ -69,31 +68,24 @@ actual fun VideoSurfaceView(
             }
         }
         
-        // Отображаем видео через VideoViewWrapper
         UIKitView(
             factory = {
-                // Используем обертки из cinterop согласно документации
                 val frame = platform.CoreGraphics.CGRectMake(0.0, 0.0, 0.0, 0.0)
                 val wrapper = com.justcalls.livekit.wrappers.VideoViewWrapper(frame) as? UIView
                 
                 if (wrapper != null && videoTrack != null) {
-                    // setTrack принимает VideoTrack?, приводим ObjCObject? к нужному типу
                     val videoViewWrapper = wrapper as? com.justcalls.livekit.wrappers.VideoViewWrapper
-                    // VideoTrack - это forward declaration из cinterop, используем ObjCObject с приведением типа
                     @Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
-                    val track = videoTrack as? com.justcalls.livekit.wrappers.VideoTrack
-                    videoViewWrapper?.setTrack(track)
+                    videoViewWrapper?.setTrack(videoTrack)
                 }
                 
                 wrapper ?: UIView()
             },
             update = { view ->
-                // Обновляем трек при изменении
                 if (videoTrack != null) {
                     val videoViewWrapper = view as? com.justcalls.livekit.wrappers.VideoViewWrapper
                     @Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
-                    val track = videoTrack as? com.justcalls.livekit.wrappers.VideoTrack
-                    videoViewWrapper?.setTrack(track)
+                    videoViewWrapper?.setTrack(videoTrack)
                 }
             },
             modifier = modifier
