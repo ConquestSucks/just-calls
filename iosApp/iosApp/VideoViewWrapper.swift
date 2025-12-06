@@ -34,7 +34,7 @@ import UIKit
     }
     
     @objc public func setTrack(_ track: VideoTrack?) {
-        if let oldTrack = self.track {
+        if self.track != nil {
             videoView?.track = nil
         }
         
