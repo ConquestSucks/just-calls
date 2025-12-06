@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinxSerialization)
+    kotlin("native.cocoapods")
 }
 
 kotlin {
@@ -34,6 +35,19 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
+    }
+    
+    cocoapods {
+        summary = "JustCalls iOS App"
+        homepage = "https://github.com/justcalls"
+        version = "1.0"
+        ios.deploymentTarget = "15.0"
+        framework {
+            baseName = "ComposeApp"
+            isStatic = true
+        }
+        // LiveKit будет добавлен через Swift Package Manager в Xcode проекте
+        // pod("LiveKit", "~> 2.0")
     }
 
     sourceSets {
