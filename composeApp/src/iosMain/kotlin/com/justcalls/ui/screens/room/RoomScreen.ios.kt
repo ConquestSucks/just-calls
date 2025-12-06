@@ -13,7 +13,7 @@ actual fun rememberPermissionLauncher(
     onError: (String) -> Unit
 ): (Array<String>) -> Unit {
     return { permissions ->
-        println("[RoomScreen iOS] Запрос разрешений пока не реализован")
+        // Not implemented for iOS yet
     }
 }
 

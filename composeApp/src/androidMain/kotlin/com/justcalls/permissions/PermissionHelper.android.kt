@@ -12,11 +12,9 @@ actual suspend fun requestCameraAndMicrophonePermissions(): Boolean {
     val hasAudio = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     
     if (hasCamera && hasAudio) {
-        println("[PermissionHelper] Разрешения уже предоставлены")
         return true
     }
     
-    println("[PermissionHelper] Разрешения не предоставлены. Нужно запросить через Activity.")
     return false
 }
 

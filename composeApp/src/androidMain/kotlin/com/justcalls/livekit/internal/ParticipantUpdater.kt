@@ -10,11 +10,9 @@ internal object ParticipantUpdater {
         
         try {
             addLocalParticipant(room, participants)
-            
             addRemoteParticipants(room, participants)
         } catch (e: Exception) {
-            println("[ParticipantUpdater] Ошибка при обновлении участников: ${e.message}")
-            e.printStackTrace()
+            // Ignore
         }
         
         return participants
@@ -29,17 +27,11 @@ internal object ParticipantUpdater {
         val identityStr = local.identity?.toString() ?: "local"
         val nameStr = local.name ?: identityStr
         
-        println("[ParticipantUpdater] Локальный участник: identity=$identityStr, name=$nameStr")
-        
-        // Пытаемся получить состояние камеры и микрофона через методы LocalParticipant
         val isCameraEnabled = try {
             val isCameraEnabledMethod = local.javaClass.getMethod("isCameraEnabled")
             val cameraEnabled = isCameraEnabledMethod.invoke(local) as? Boolean ?: false
-            println("[ParticipantUpdater] isCameraEnabled() = $cameraEnabled")
             cameraEnabled
         } catch (e: Exception) {
-            println("[ParticipantUpdater] Не удалось вызвать isCameraEnabled(): ${e.message}")
-            // Fallback на проверку публикаций
             val (cameraEnabled, _) = getTrackStates(local.videoTrackPublications, local.audioTrackPublications)
             cameraEnabled
         }
@@ -47,16 +39,11 @@ internal object ParticipantUpdater {
         val isMicrophoneEnabled = try {
             val isMicrophoneEnabledMethod = local.javaClass.getMethod("isMicrophoneEnabled")
             val micEnabled = isMicrophoneEnabledMethod.invoke(local) as? Boolean ?: false
-            println("[ParticipantUpdater] isMicrophoneEnabled() = $micEnabled")
             micEnabled
         } catch (e: Exception) {
-            println("[ParticipantUpdater] Не удалось вызвать isMicrophoneEnabled(): ${e.message}")
-            // Fallback на проверку публикаций
             val (_, micEnabled) = getTrackStates(local.videoTrackPublications, local.audioTrackPublications)
             micEnabled
         }
-        
-        println("[ParticipantUpdater] Локальный участник: камера=$isCameraEnabled, микрофон=$isMicrophoneEnabled")
         
         participants.add(
             LiveKitParticipant(
@@ -95,7 +82,7 @@ internal object ParticipantUpdater {
                 )
             }
         } catch (e: Exception) {
-            println("[ParticipantUpdater] Ошибка при получении удалённых участников: ${e.message}")
+            // Ignore
         }
     }
     
@@ -107,56 +94,35 @@ internal object ParticipantUpdater {
             val isCameraEnabled = when (videoPubs) {
                 is Collection<*> -> {
                     val hasPubs = videoPubs.isNotEmpty()
-                    println("[ParticipantUpdater] Видео публикации (Collection): размер=${videoPubs.size}, isNotEmpty=$hasPubs")
                     if (hasPubs) {
-                        // Проверяем, что трек действительно опубликован
                         val firstPub = videoPubs.firstOrNull()
                         val isPublished = try {
                             if (firstPub != null) {
-                                // Если это Pair, извлекаем публикацию
                                 val publication = when {
-                                    firstPub is Pair<*, *> -> {
-                                        println("[ParticipantUpdater] Первый элемент - Pair, извлекаем публикацию")
-                                        firstPub.second ?: firstPub.first
-                                    }
-
+                                    firstPub is Pair<*, *> -> firstPub.second ?: firstPub.first
                                     else -> firstPub
                                 }
 
-                                // Пытаемся проверить состояние публикации
                                 try {
                                     val isMutedMethod = publication?.javaClass?.getMethod("isMuted")
                                     val muted = isMutedMethod?.invoke(publication) as? Boolean ?: false
-                                    println("[ParticipantUpdater] Публикация muted: $muted")
                                     !muted
                                 } catch (e: Exception) {
-                                    println("[ParticipantUpdater] Не удалось вызвать isMuted(): ${e.message}, считаем что включено")
-                                    true // Если не можем проверить, считаем что включено
+                                    true
                                 }
                             } else {
                                 false
                             }
                         } catch (e: Exception) {
-                            println("[ParticipantUpdater] Ошибка при проверке состояния публикации: ${e.message}")
-                            true // Если не можем проверить, считаем что включено
+                            true
                         }
-                        println("[ParticipantUpdater] Видео трек опубликован: $isPublished")
                         isPublished
                     } else {
                         false
                     }
                 }
-
-                is Map<*, *> -> {
-                    val hasPubs = videoPubs.isNotEmpty()
-                    println("[ParticipantUpdater] Видео публикации (Map): размер=${videoPubs.size}, isNotEmpty=$hasPubs")
-                    hasPubs
-                }
-
-                else -> {
-                    println("[ParticipantUpdater] Видео публикации: неизвестный тип ${videoPubs.javaClass.name}")
-                    false
-                }
+                is Map<*, *> -> videoPubs.isNotEmpty()
+                else -> false
             }
             
             val isMicrophoneEnabled = when (audioPubs) {
@@ -165,13 +131,9 @@ internal object ParticipantUpdater {
                 else -> false
             }
             
-            println("[ParticipantUpdater] Состояние треков: камера=$isCameraEnabled, микрофон=$isMicrophoneEnabled")
             Pair(isCameraEnabled, isMicrophoneEnabled)
         } catch (e: Exception) {
-            println("[ParticipantUpdater] Ошибка при проверке треков: ${e.message}")
-            e.printStackTrace()
             Pair(false, false)
         }
     }
 }
-

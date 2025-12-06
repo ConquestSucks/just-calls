@@ -1,6 +1,5 @@
 package com.justcalls.data.models.responses
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable

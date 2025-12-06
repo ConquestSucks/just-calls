@@ -24,8 +24,6 @@ actual fun rememberPermissionLauncher(
         val cameraGranted = permissions[Manifest.permission.CAMERA] ?: false
         val audioGranted = permissions[Manifest.permission.RECORD_AUDIO] ?: false
         
-        println("[RoomScreen] Разрешения: CAMERA=$cameraGranted, RECORD_AUDIO=$audioGranted")
-        
         if (cameraGranted && isCameraEnabled) {
             liveKitManager.setCameraEnabled(true)
         } else if (!cameraGranted && isCameraEnabled) {

@@ -114,17 +114,7 @@ class RoomService(
                 parameter("roomKey", roomKey)
             }
             
-            println("[RoomService] getRoomToken - HTTP статус: ${httpResponse.status.value}")
-            println("[RoomService] getRoomToken - Headers: ${httpResponse.headers}")
-            
             val response = httpResponse.body<ApiResult<RoomTokenResult>>()
-            
-            println("[RoomService] getRoomToken - Response success: ${response.success}")
-            if (!response.success) {
-                println("[RoomService] getRoomToken - Error code: ${response.error?.code}")
-                println("[RoomService] getRoomToken - Error message: ${response.error?.message}")
-            }
-            
             response
         }
     }

@@ -50,15 +50,12 @@ fun ParticipantCard(
             )
     ) {
         if (isCameraEnabled && videoSurface != null) {
-            println("[ParticipantCard] Отображаем видео для участника ${participant.id}, videoSurface=$videoSurface, liveKitManager=${liveKitManager != null}")
             VideoSurfaceView(
                 videoSurface = videoSurface,
                 liveKitManager = liveKitManager,
                 participantId = participant.id,
                 modifier = Modifier.fillMaxSize()
             )
-        } else {
-            println("[ParticipantCard] Видео не отображается: isCameraEnabled=$isCameraEnabled, videoSurface=$videoSurface")
         }
         
         if (!isCameraEnabled || videoSurface == null) {

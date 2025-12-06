@@ -2,7 +2,6 @@ package com.justcalls.livekit
 
 import com.justcalls.JustCallsApplication
 import com.justcalls.data.models.responses.RoomTokenResult
-import com.justcalls.livekit.internal.EglContextManager
 import com.justcalls.livekit.internal.ParticipantUpdater
 import com.justcalls.livekit.internal.VideoTrackExtractor
 import io.livekit.android.LiveKit
@@ -28,8 +27,6 @@ actual class LiveKitManager {
     private val videoTracks = mutableMapOf<String, VideoTrack>()
     private val localVideoTracks = mutableMapOf<String, LocalVideoTrack>()
     
-    private val eglContextManager = EglContextManager()
-    
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     
     init {
@@ -45,8 +42,6 @@ actual class LiveKitManager {
     actual suspend fun connect(tokenResult: RoomTokenResult, serverUrl: String) {
         try {
             val appContext = JustCallsApplication.instance
-            
-            eglContextManager.initialize()
             
             val newRoom = LiveKit.create(appContext)
             
@@ -120,8 +115,6 @@ actual class LiveKitManager {
             
             room?.disconnect()
             room = null
-            
-            eglContextManager.release()
             
             _participants.value = emptyList()
         } catch (e: Exception) {
@@ -258,7 +251,7 @@ actual class LiveKitManager {
     }
     
     actual fun getEglBaseContext(): Any? {
-        return eglContextManager.getContext()
+        return null
     }
     
     fun getRoom(): Room? {
