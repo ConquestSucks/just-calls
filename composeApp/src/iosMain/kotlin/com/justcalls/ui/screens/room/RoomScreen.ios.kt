@@ -6,8 +6,11 @@ import com.justcalls.livekit.LiveKitManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import platform.AVFoundation.*
-import platform.Foundation.NSError
+import platform.AVFoundation.AVAudioSession
+import platform.AVFoundation.AVCaptureDevice
+import platform.AVFoundation.AVMediaTypeVideo
+import platform.AVFoundation.AVAuthorizationStatusNotDetermined
+import platform.AVFoundation.AVAuthorizationStatusAuthorized
 import kotlinx.cinterop.ExperimentalForeignApi
 
 @OptIn(ExperimentalForeignApi::class)
@@ -56,9 +59,10 @@ actual fun rememberPermissionLauncher(
                         "RECORD_AUDIO" -> {
                             val audioSession = AVAudioSession.sharedInstance()
                             val currentPermission = audioSession.recordPermission
-                            when (currentPermission) {
-                                AVAudioSessionRecordPermissionUndetermined -> {
-                                    audioSession.requestRecordPermission { granted ->
+                            // AVAudioSessionRecordPermission: 0 = Undetermined, 1 = Denied, 2 = Granted
+                            when (currentPermission.toInt()) {
+                                0 -> { // Undetermined
+                                    audioSession.requestRecordPermission { granted: Boolean ->
                                         if (granted) {
                                             if (isMicrophoneEnabled) {
                                                 liveKitManager.setMicrophoneEnabled(true)
@@ -69,12 +73,12 @@ actual fun rememberPermissionLauncher(
                                         }
                                     }
                                 }
-                                AVAudioSessionRecordPermissionGranted -> {
+                                2 -> { // Granted
                                     if (isMicrophoneEnabled) {
                                         liveKitManager.setMicrophoneEnabled(true)
                                     }
                                 }
-                                else -> {
+                                else -> { // Denied
                                     onMicrophoneChanged(false)
                                     onError("Требуется разрешение на использование микрофона")
                                 }
@@ -98,7 +102,8 @@ actual fun hasPermission(permission: String): Boolean {
             }
             "RECORD_AUDIO" -> {
                 val audioSession = AVAudioSession.sharedInstance()
-                audioSession.recordPermission == AVAudioSessionRecordPermissionGranted
+                // AVAudioSessionRecordPermission: 0 = Undetermined, 1 = Denied, 2 = Granted
+                audioSession.recordPermission.toInt() == 2
             }
             else -> false
         }
