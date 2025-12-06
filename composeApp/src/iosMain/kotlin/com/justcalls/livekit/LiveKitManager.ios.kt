@@ -51,13 +51,20 @@ actual class LiveKitManager {
             val allocSelector = sel_registerName("alloc")
             val initSelector = sel_registerName("init")
             
-            val allocResult = objc_msgSend(wrapperClass, allocSelector)
-            val newWrapper = objc_msgSend(allocResult, initSelector) as? ObjCObject
+            @Suppress("UNCHECKED_CAST")
+            val allocFunc = objc_msgSend as (Any?, Any?) -> Any?
+            val allocResult = allocFunc(wrapperClass, allocSelector)
+            
+            @Suppress("UNCHECKED_CAST")
+            val initFunc = objc_msgSend as (Any?, Any?) -> Any?
+            val newWrapper = initFunc(allocResult, initSelector) as? ObjCObject
                 ?: throw Exception("Failed to create LiveKitWrapper instance")
             
             // Создаем комнату
             val createRoomSelector = sel_registerName("createRoom")
-            objc_msgSend(newWrapper, createRoomSelector)
+            @Suppress("UNCHECKED_CAST")
+            val createRoomFunc = objc_msgSend as (ObjCObject, Any?) -> Unit
+            createRoomFunc(newWrapper, createRoomSelector)
             
             // Подключаемся к комнате
             suspendCancellableCoroutine<Unit> { continuation ->
@@ -75,7 +82,9 @@ actual class LiveKitManager {
                 
                 // Вызываем метод с блоком
                 val connectSelector = sel_registerName("connectWithUrl:token:completion:")
-                objc_msgSend(newWrapper, connectSelector, urlString, tokenString, block)
+                @Suppress("UNCHECKED_CAST")
+                val connectFunc = objc_msgSend as (ObjCObject, Any?, NSString, NSString, (NSError?) -> Unit) -> Unit
+                connectFunc(newWrapper, connectSelector, urlString, tokenString, block)
             }
             
             this.wrapper = newWrapper
@@ -111,7 +120,9 @@ actual class LiveKitManager {
                     }
                     
                     val disconnectSelector = sel_registerName("disconnectWithCompletion:")
-                    objc_msgSend(currentWrapper, disconnectSelector, block)
+                    @Suppress("UNCHECKED_CAST")
+                    val disconnectFunc = objc_msgSend as (ObjCObject, Any?, () -> Unit) -> Unit
+                    disconnectFunc(currentWrapper, disconnectSelector, block)
                 }
             }
             
@@ -136,7 +147,9 @@ actual class LiveKitManager {
                     }
                     
                     val setMicrophoneSelector = sel_registerName("setMicrophoneEnabled:completion:")
-                    objc_msgSend(currentWrapper, setMicrophoneSelector, enabled, block)
+                    @Suppress("UNCHECKED_CAST")
+                    val setMicrophoneFunc = objc_msgSend as (ObjCObject, Any?, Boolean, (NSError?) -> Unit) -> Unit
+                    setMicrophoneFunc(currentWrapper, setMicrophoneSelector, enabled, block)
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -161,7 +174,9 @@ actual class LiveKitManager {
                     }
                     
                     val setCameraSelector = sel_registerName("setCameraEnabled:completion:")
-                    objc_msgSend(currentWrapper, setCameraSelector, enabled, block)
+                    @Suppress("UNCHECKED_CAST")
+                    val setCameraFunc = objc_msgSend as (ObjCObject, Any?, Boolean, (NSError?) -> Unit) -> Unit
+                    setCameraFunc(currentWrapper, setCameraSelector, enabled, block)
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -220,7 +235,9 @@ actual class LiveKitManager {
         val currentWrapper = wrapper ?: return null
         return try {
             val selector = sel_registerName("getLocalParticipantIdentity")
-            objc_msgSend(currentWrapper, selector) as? String
+            @Suppress("UNCHECKED_CAST")
+            val func = objc_msgSend as (ObjCObject, Any?) -> Any?
+            func(currentWrapper, selector) as? String
         } catch (e: Exception) {
             null
         }
@@ -230,7 +247,9 @@ actual class LiveKitManager {
         val currentWrapper = wrapper ?: return null
         return try {
             val selector = sel_registerName("getLocalVideoTrack")
-            objc_msgSend(currentWrapper, selector) as? ObjCObject
+            @Suppress("UNCHECKED_CAST")
+            val func = objc_msgSend as (ObjCObject, Any?) -> Any?
+            func(currentWrapper, selector) as? ObjCObject
         } catch (e: Exception) {
             null
         }
@@ -240,7 +259,9 @@ actual class LiveKitManager {
         val currentWrapper = wrapper ?: return false
         return try {
             val selector = sel_registerName("isLocalCameraEnabled")
-            (objc_msgSend(currentWrapper, selector) as? NSNumber)?.boolValue ?: false
+            @Suppress("UNCHECKED_CAST")
+            val func = objc_msgSend as (ObjCObject, Any?) -> Any?
+            (func(currentWrapper, selector) as? NSNumber)?.boolValue ?: false
         } catch (e: Exception) {
             false
         }
@@ -250,7 +271,9 @@ actual class LiveKitManager {
         val currentWrapper = wrapper ?: return null
         return try {
             val selector = sel_registerName("getRemoteVideoTrackWithParticipantId:")
-            objc_msgSend(currentWrapper, selector, participantId as NSString) as? ObjCObject
+            @Suppress("UNCHECKED_CAST")
+            val func = objc_msgSend as (ObjCObject, Any?, NSString) -> Any?
+            func(currentWrapper, selector, participantId as NSString) as? ObjCObject
         } catch (e: Exception) {
             null
         }
@@ -272,6 +295,8 @@ actual class LiveKitManager {
         // Для полноценной реализации нужно создать класс, реализующий протокол
         // Пока используем nil, так как создание делегата в Kotlin/Native сложнее
         // События будут обрабатываться через периодическое обновление
-        objc_msgSend(wrapper, setDelegateSelector, null)
+        @Suppress("UNCHECKED_CAST")
+        val setDelegateFunc = objc_msgSend as (ObjCObject, Any?, ObjCObject?) -> Unit
+        setDelegateFunc(wrapper, setDelegateSelector, null)
     }
 }

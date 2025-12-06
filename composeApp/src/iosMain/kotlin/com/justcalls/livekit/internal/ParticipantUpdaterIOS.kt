@@ -26,10 +26,12 @@ internal object ParticipantUpdaterIOS {
         participants: MutableList<LiveKitParticipant>
     ) {
         try {
-            val identity = objc_msgSend(wrapper, sel_registerName("getLocalParticipantIdentity")) as? String ?: "local"
-            val name = objc_msgSend(wrapper, sel_registerName("getLocalParticipantName")) as? String ?: identity
-            val isCameraEnabled = (objc_msgSend(wrapper, sel_registerName("isLocalCameraEnabled")) as? NSNumber)?.boolValue ?: false
-            val isMicrophoneEnabled = (objc_msgSend(wrapper, sel_registerName("isLocalMicrophoneEnabled")) as? NSNumber)?.boolValue ?: false
+            @Suppress("UNCHECKED_CAST")
+            val identityFunc = objc_msgSend as (ObjCObject, Any?) -> Any?
+            val identity = identityFunc(wrapper, sel_registerName("getLocalParticipantIdentity")) as? String ?: "local"
+            val name = identityFunc(wrapper, sel_registerName("getLocalParticipantName")) as? String ?: identity
+            val isCameraEnabled = (identityFunc(wrapper, sel_registerName("isLocalCameraEnabled")) as? NSNumber)?.boolValue ?: false
+            val isMicrophoneEnabled = (identityFunc(wrapper, sel_registerName("isLocalMicrophoneEnabled")) as? NSNumber)?.boolValue ?: false
             
             participants.add(
                 LiveKitParticipant(
@@ -50,7 +52,9 @@ internal object ParticipantUpdaterIOS {
         participants: MutableList<LiveKitParticipant>
     ) {
         try {
-            val remoteParticipants = objc_msgSend(wrapper, sel_registerName("getRemoteParticipants")) as? NSArray
+            @Suppress("UNCHECKED_CAST")
+            val getRemoteFunc = objc_msgSend as (ObjCObject, Any?) -> Any?
+            val remoteParticipants = getRemoteFunc(wrapper, sel_registerName("getRemoteParticipants")) as? NSArray
             if (remoteParticipants != null) {
                 for (i in 0 until remoteParticipants.count.toInt()) {
                     val participantDict = remoteParticipants.objectAtIndex(i.toULong()) as? NSDictionary

@@ -77,7 +77,9 @@ actual fun VideoSurfaceView(
                     val allocSelector = sel_registerName("alloc")
                     val initSelector = sel_registerName("initWithFrame:")
                     
-                    val allocResult = objc_msgSend(wrapperClass, allocSelector)
+                    @Suppress("UNCHECKED_CAST")
+                    val allocFunc = objc_msgSend as (Any?, Any?) -> Any?
+                    val allocResult = allocFunc(wrapperClass, allocSelector)
                     
                     var result: UIView? = null
                     memScoped {
@@ -85,13 +87,17 @@ actual fun VideoSurfaceView(
                         val frameVar = alloc<platform.CoreGraphics.CGRectVar>()
                         frameVar.value = frame
                         
-                        result = objc_msgSend(allocResult, initSelector, frameVar) as? UIView
+                        @Suppress("UNCHECKED_CAST")
+                        val initFunc = objc_msgSend as (Any?, Any?, platform.CoreGraphics.CGRectVar) -> Any?
+                        result = initFunc(allocResult, initSelector, frameVar) as? UIView
                     }
                     
                     val wrapper = result
                     if (wrapper != null && videoTrack != null) {
                         val setTrackSelector = sel_registerName("setTrack:")
-                        objc_msgSend(wrapper, setTrackSelector, videoTrack)
+                        @Suppress("UNCHECKED_CAST")
+                        val setTrackFunc = objc_msgSend as (UIView, Any?, ObjCObject?) -> Unit
+                        setTrackFunc(wrapper, setTrackSelector, videoTrack)
                     }
                     
                     wrapper ?: UIView()
@@ -102,7 +108,9 @@ actual fun VideoSurfaceView(
             update = { view ->
                 // Обновляем трек при изменении
                 val setTrackSelector = sel_registerName("setTrack:")
-                objc_msgSend(view, setTrackSelector, videoTrack)
+                @Suppress("UNCHECKED_CAST")
+                val setTrackFunc = objc_msgSend as (UIView, Any?, ObjCObject?) -> Unit
+                setTrackFunc(view, setTrackSelector, videoTrack)
             },
             modifier = modifier
         )
