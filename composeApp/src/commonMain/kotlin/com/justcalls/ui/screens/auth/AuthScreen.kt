@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.justcalls.data.network.ApiClient
 import com.justcalls.data.network.AuthService
+import com.justcalls.data.storage.RegistrationStorage
 import com.justcalls.data.storage.TokenStorage
 import com.justcalls.ui.components.auth.AuthTabItem
 import com.justcalls.ui.components.auth.StepIndicator
@@ -43,11 +45,22 @@ fun AuthScreen(
     onAuthSuccess: () -> Unit = {}
 ) {
     val tokenStorage = remember { TokenStorage() }
+    val registrationStorage = remember { RegistrationStorage() }
     val finalApiClient = apiClient ?: remember { ApiClient(tokenStorage) }
     val finalAuthService = authService ?: remember { AuthService(finalApiClient, tokenStorage) }
     val state = remember { AuthState() }
     val coroutineScope = remember { CoroutineScope(Dispatchers.Main) }
-    val handler = remember { AuthHandler(state, finalAuthService, onAuthSuccess, coroutineScope) }
+    val handler = remember { AuthHandler(state, finalAuthService, onAuthSuccess, registrationStorage, coroutineScope) }
+    
+    // Восстанавливаем GUID при инициализации, если email уже введен
+    LaunchedEffect(state.registerEmail) {
+        if (state.registerEmail.isNotBlank() && state.registrationGuid == null && state.registerStep == RegisterStep.EMAIL) {
+            val savedGuid = registrationStorage.getRegistrationGuid(state.registerEmail)
+            if (savedGuid != null) {
+                state.registrationGuid = savedGuid
+            }
+        }
+    }
 
     MaterialTheme {
         Surface(
@@ -116,8 +129,19 @@ fun AuthScreen(
                             passwordError = state.registerPasswordError,
                             confirmPasswordError = state.confirmPasswordError,
                             onEmailChange = { 
+                                val oldEmail = state.registerEmail
                                 state.registerEmail = it
                                 state.registerEmailError = null
+                                
+                                // Если email изменился, очищаем старый GUID
+                                if (oldEmail != it) {
+                                    state.registrationGuid = null
+                                    // Восстанавливаем GUID для нового email, если он был сохранен
+                                    val savedGuid = registrationStorage.getRegistrationGuid(it)
+                                    if (savedGuid != null) {
+                                        state.registrationGuid = savedGuid
+                                    }
+                                }
                             },
                             onVerificationCodeChange = { 
                                 state.verificationCode = it

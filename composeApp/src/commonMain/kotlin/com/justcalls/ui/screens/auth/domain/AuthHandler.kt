@@ -4,6 +4,7 @@ import com.justcalls.data.models.requests.CompleteRequest
 import com.justcalls.data.models.requests.SignInRequest
 import com.justcalls.data.models.requests.SignUpRequest
 import com.justcalls.data.network.AuthService
+import com.justcalls.data.storage.RegistrationStorage
 import com.justcalls.utils.NetworkErrorHandler.getErrorMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +14,7 @@ class AuthHandler(
     private val state: AuthState,
     private val authService: AuthService,
     private val onAuthSuccess: () -> Unit,
+    private val registrationStorage: RegistrationStorage = RegistrationStorage(),
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 ) {
     fun handleLogin() {
@@ -55,6 +57,15 @@ class AuthHandler(
                 state.registerEmailError = AuthValidation.validateEmail(state.registerEmail)
                 
                 if (state.registerEmailError == null) {
+                    // Проверяем, есть ли сохраненный GUID для этого email
+                    // Восстанавливаем GUID из хранилища, если он не был установлен
+                    if (state.registrationGuid == null) {
+                        val savedGuid = registrationStorage.getRegistrationGuid(state.registerEmail)
+                        if (savedGuid != null) {
+                            state.registrationGuid = savedGuid
+                        }
+                    }
+                    
                     state.isLoading = true
                     state.errorMessage = null
                     
@@ -71,8 +82,11 @@ class AuthHandler(
                         result.fold(
                             onSuccess = { apiResult ->
                                 if (apiResult.success && apiResult.data != null) {
-                                    state.registrationGuid = apiResult.data.guid
-                    state.registerStep = RegisterStep.VERIFICATION_CODE
+                                    val guid = apiResult.data.guid
+                                    state.registrationGuid = guid
+                                    // Сохраняем GUID в постоянное хранилище
+                                    registrationStorage.saveRegistrationGuid(state.registerEmail, guid)
+                                    state.registerStep = RegisterStep.VERIFICATION_CODE
                                 } else {
                                     state.errorMessage = apiResult.error?.message ?: "Ошибка регистрации"
                                 }
@@ -123,6 +137,9 @@ class AuthHandler(
                         result.fold(
                             onSuccess = { apiResult ->
                                 if (apiResult.success) {
+                                    // Очищаем GUID после успешного завершения регистрации
+                                    registrationStorage.clearRegistrationGuid(state.registerEmail)
+                                    state.registrationGuid = null
                                     handleLogin()
                                 } else {
                                     state.errorMessage = apiResult.error?.message ?: "Ошибка завершения регистрации"
