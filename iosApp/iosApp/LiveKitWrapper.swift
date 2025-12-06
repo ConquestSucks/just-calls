@@ -36,6 +36,11 @@ import LiveKit
         }
     }
     
+    // Вспомогательные методы для упрощения вызовов из Kotlin
+    @objc public func connectWithUrl(_ url: NSString, token: NSString, completion: @escaping (NSError?) -> Void) {
+        connect(url: url as String, token: token as String, completion: completion)
+    }
+    
     @objc public func disconnect(completion: @escaping () -> Void) {
         guard let room = self.room else {
             completion()
@@ -49,6 +54,10 @@ import LiveKit
                 completion()
             }
         }
+    }
+    
+    @objc public func disconnectWithCompletion(_ completion: @escaping () -> Void) {
+        disconnect(completion: completion)
     }
     
     @objc public func setMicrophoneEnabled(_ enabled: Bool, completion: @escaping (Error?) -> Void) {
@@ -71,6 +80,12 @@ import LiveKit
         }
     }
     
+    @objc public func setMicrophoneEnabled(_ enabled: Bool, completion: @escaping (NSError?) -> Void) {
+        setMicrophoneEnabled(enabled) { error in
+            completion(error as? NSError)
+        }
+    }
+    
     @objc public func setCameraEnabled(_ enabled: Bool, completion: @escaping (Error?) -> Void) {
         guard let room = self.room else {
             completion(NSError(domain: "LiveKitWrapper", code: -1, userInfo: [NSLocalizedDescriptionKey: "Room not connected"]))
@@ -88,6 +103,12 @@ import LiveKit
                     completion(error)
                 }
             }
+        }
+    }
+    
+    @objc public func setCameraEnabled(_ enabled: Bool, completion: @escaping (NSError?) -> Void) {
+        setCameraEnabled(enabled) { error in
+            completion(error as? NSError)
         }
     }
     

@@ -3,9 +3,9 @@ package com.justcalls.livekit.internal
 import com.justcalls.livekit.LiveKitParticipant
 import platform.Foundation.*
 import platform.objc.*
+import kotlinx.cinterop.*
 
-// Используем LiveKitWrapper через Objective-C interop
-@Suppress("EXPERIMENTAL_OBJC_INTEROP")
+@OptIn(ExperimentalForeignApi::class)
 internal object ParticipantUpdaterIOS {
     
     fun updateParticipants(wrapper: platform.objc.ObjCObject): List<LiveKitParticipant> {
