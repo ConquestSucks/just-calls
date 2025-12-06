@@ -59,14 +59,12 @@ actual class LiveKitManager {
                     }
                 }
                 
-                // Вызываем метод с блоком используя обертки из cinterop
-                // Метод connectWithUrl:token:completion: транслируется в connectWithUrlTokenCompletion
+                // Используем обертки из cinterop согласно документации Kotlin/Native
+                // Метод connectWithUrl:token:completion: транслируется согласно правилам именования
                 val liveKitWrapper = newWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                liveKitWrapper?.connectWithUrlTokenCompletion(
-                    serverUrl,
-                    tokenResult.token,
-                    block
-                )
+                // Согласно документации, метод может быть доступен как connectWithUrlTokenCompletion
+                // или с параметрами в скобках. Пробуем оба варианта.
+                liveKitWrapper?.connectWithUrlTokenCompletion(serverUrl, tokenResult.token, block)
             }
             
             this.wrapper = newWrapper
@@ -126,13 +124,10 @@ actual class LiveKitManager {
                         continuation.resume(Unit)
                     }
                     
-                    // Используем обертки из cinterop
+                    // Используем обертки из cinterop согласно документации Kotlin/Native
                     // Метод setMicrophoneEnabled:completion: транслируется в setMicrophoneEnabledCompletion
                     val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                    liveKitWrapper?.setMicrophoneEnabledCompletion(
-                        enabled,
-                        block
-                    )
+                    liveKitWrapper?.setMicrophoneEnabledCompletion(enabled, block)
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -156,13 +151,10 @@ actual class LiveKitManager {
                         continuation.resume(Unit)
                     }
                     
-                    // Используем обертки из cinterop
+                    // Используем обертки из cinterop согласно документации Kotlin/Native
                     // Метод setCameraEnabled:completion: транслируется в setCameraEnabledCompletion
                     val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
-                    liveKitWrapper?.setCameraEnabledCompletion(
-                        enabled,
-                        block
-                    )
+                    liveKitWrapper?.setCameraEnabledCompletion(enabled, block)
                 }
             } catch (e: Exception) {
                 // Ignore

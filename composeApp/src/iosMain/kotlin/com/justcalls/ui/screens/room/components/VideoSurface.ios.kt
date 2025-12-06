@@ -72,19 +72,16 @@ actual fun VideoSurfaceView(
         // Отображаем видео через VideoViewWrapper
         UIKitView(
             factory = {
-                // Используем обертки из cinterop
+                // Используем обертки из cinterop согласно документации
                 val frame = platform.CoreGraphics.CGRectMake(0.0, 0.0, 0.0, 0.0)
                 val wrapper = com.justcalls.livekit.wrappers.VideoViewWrapper(frame) as? UIView
                 
                 if (wrapper != null && videoTrack != null) {
-                    // setTrack принимает VideoTrack?, но VideoTrack - это forward declaration
-                    // Используем ObjCObject напрямую, так как VideoTrack не экспортирован в cinterop
+                    // setTrack принимает VideoTrack?, приводим ObjCObject? к нужному типу
                     val videoViewWrapper = wrapper as? com.justcalls.livekit.wrappers.VideoViewWrapper
-                    // Приводим ObjCObject? к нужному типу - VideoTrack это просто ObjCObject под капотом
-                    @Suppress("UNCHECKED_CAST")
-                    val track = videoTrack as? ObjCObject
-                    // Используем прямой вызов с приведением типа
+                    // VideoTrack - это forward declaration, используем ObjCObject с приведением типа
                     @Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
+                    val track = videoTrack as? ObjCObject
                     videoViewWrapper?.setTrack(track)
                 }
                 
@@ -92,12 +89,12 @@ actual fun VideoSurfaceView(
             },
             update = { view ->
                 // Обновляем трек при изменении
-                val videoViewWrapper = view as? com.justcalls.livekit.wrappers.VideoViewWrapper
-                @Suppress("UNCHECKED_CAST")
-                val track = videoTrack as? ObjCObject
-                // Используем прямой вызов с приведением типа
-                @Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
-                videoViewWrapper?.setTrack(track)
+                if (videoTrack != null) {
+                    val videoViewWrapper = view as? com.justcalls.livekit.wrappers.VideoViewWrapper
+                    @Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
+                    val track = videoTrack as? ObjCObject
+                    videoViewWrapper?.setTrack(track)
+                }
             },
             modifier = modifier
         )
