@@ -18,6 +18,8 @@
 - (NSArray<NSDictionary<NSString *, id> *> *)getRemoteParticipants;
 - (id _Nullable)getRemoteVideoTrackWithParticipantId:(NSString *)participantId;
 - (void)setDelegate:(id<LiveKitWrapperDelegate> _Nullable)delegate;
+- (void)requestCameraPermissionWithCompletion:(void (^)(BOOL))completion;
+- (void)requestMicrophonePermissionWithCompletion:(void (^)(BOOL))completion;
 
 @end
 

@@ -253,4 +253,46 @@ actual class LiveKitManager {
         // События будут обрабатываться через периодическое обновление
         (wrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.setDelegate(null)
     }
+    
+    fun requestCameraPermission(completion: (Boolean) -> Unit) {
+        val currentWrapper = wrapper ?: run {
+            completion(false)
+            return
+        }
+        scope.launch {
+            try {
+                suspendCancellableCoroutine<Unit> { continuation ->
+                    val block: (Boolean) -> Unit = { granted ->
+                        completion(granted)
+                        continuation.resume(Unit)
+                    }
+                    val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
+                    liveKitWrapper?.requestCameraPermissionWithCompletion(block)
+                }
+            } catch (e: Exception) {
+                completion(false)
+            }
+        }
+    }
+    
+    fun requestMicrophonePermission(completion: (Boolean) -> Unit) {
+        val currentWrapper = wrapper ?: run {
+            completion(false)
+            return
+        }
+        scope.launch {
+            try {
+                suspendCancellableCoroutine<Unit> { continuation ->
+                    val block: (Boolean) -> Unit = { granted ->
+                        completion(granted)
+                        continuation.resume(Unit)
+                    }
+                    val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
+                    liveKitWrapper?.requestMicrophonePermissionWithCompletion(block)
+                }
+            } catch (e: Exception) {
+                completion(false)
+            }
+        }
+    }
 }

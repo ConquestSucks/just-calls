@@ -1,5 +1,6 @@
 import Foundation
 import LiveKit
+import AVFoundation
 
 @objc(LiveKitWrapper)
 public final class LiveKitWrapper: NSObject, @unchecked Sendable {
@@ -167,6 +168,40 @@ public final class LiveKitWrapper: NSObject, @unchecked Sendable {
     
     @objc public func setDelegate(_ delegate: LiveKitWrapperDelegate?) {
         self.delegate = delegate
+    }
+    
+    // Явный запрос разрешений
+    @objc public func requestCameraPermission(completion: @escaping (Bool) -> Void) {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch status {
+        case .authorized:
+            completion(true)
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    completion(granted)
+                }
+            }
+        default:
+            completion(false)
+        }
+    }
+    
+    @objc public func requestMicrophonePermission(completion: @escaping (Bool) -> Void) {
+        let audioSession = AVAudioSession.sharedInstance()
+        let status = audioSession.recordPermission
+        switch status {
+        case .granted:
+            completion(true)
+        case .undetermined:
+            audioSession.requestRecordPermission { granted in
+                DispatchQueue.main.async {
+                    completion(granted)
+                }
+            }
+        default:
+            completion(false)
+        }
     }
 }
 

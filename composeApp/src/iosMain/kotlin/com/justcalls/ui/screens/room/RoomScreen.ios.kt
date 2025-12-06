@@ -12,24 +12,37 @@ actual fun rememberPermissionLauncher(
     onCameraChanged: (Boolean) -> Unit,
     onError: (String) -> Unit
 ): (Array<String>) -> Unit {
-    // На iOS LiveKit SDK автоматически запрашивает разрешения при первом использовании
-    // через room.localParticipant.setCamera/setMicrophone
-    // Вызываем методы LiveKit, которые запросят разрешения через систему iOS
     return { permissions ->
         permissions.forEach { permission ->
             when (permission) {
                 "CAMERA" -> {
-                    // LiveKit SDK запросит разрешение автоматически при вызове setCameraEnabled
-                    // iOS покажет системный диалог, если разрешение еще не запрошено
-                    if (isCameraEnabled) {
-                        liveKitManager.setCameraEnabled(true)
+                    // Явно запрашиваем разрешение на камеру перед включением
+                    @Suppress("UNCHECKED_CAST")
+                    val manager = liveKitManager as? com.justcalls.livekit.LiveKitManager
+                    manager?.requestCameraPermission { granted ->
+                        if (granted) {
+                            if (isCameraEnabled) {
+                                liveKitManager.setCameraEnabled(true)
+                            }
+                        } else {
+                            onCameraChanged(false)
+                            onError("Требуется разрешение на использование камеры")
+                        }
                     }
                 }
                 "RECORD_AUDIO" -> {
-                    // LiveKit SDK запросит разрешение автоматически при вызове setMicrophoneEnabled
-                    // iOS покажет системный диалог, если разрешение еще не запрошено
-                    if (isMicrophoneEnabled) {
-                        liveKitManager.setMicrophoneEnabled(true)
+                    // Явно запрашиваем разрешение на микрофон перед включением
+                    @Suppress("UNCHECKED_CAST")
+                    val manager = liveKitManager as? com.justcalls.livekit.LiveKitManager
+                    manager?.requestMicrophonePermission { granted ->
+                        if (granted) {
+                            if (isMicrophoneEnabled) {
+                                liveKitManager.setMicrophoneEnabled(true)
+                            }
+                        } else {
+                            onMicrophoneChanged(false)
+                            onError("Требуется разрешение на использование микрофона")
+                        }
                     }
                 }
             }
