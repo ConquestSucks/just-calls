@@ -13,6 +13,7 @@ import com.justcalls.livekit.LiveKitManager
 import platform.objc.*
 import platform.Foundation.*
 import platform.UIKit.UIView
+import platform.CoreGraphics.*
 import kotlinx.cinterop.*
 
 @OptIn(ExperimentalForeignApi::class)
@@ -77,20 +78,22 @@ actual fun VideoSurfaceView(
                     val initSelector = sel_registerName("initWithFrame:")
                     
                     @Suppress("CAST_NEVER_SUCCEEDS")
-                    val allocFunc: (Any?, ObjCSelector) -> Any? = objc_msgSend as (Any?, ObjCSelector) -> Any?
+                    val allocFunc: (Any?, SEL) -> Any? = objc_msgSend as (Any?, SEL) -> Any?
                     val allocResult = allocFunc(wrapperClass, allocSelector)
                     
                     var result: UIView? = null
                     memScoped {
                         val frameVar = alloc<platform.CoreGraphics.CGRectVar>()
-                        frameVar.point.x = 0.0
-                        frameVar.point.y = 0.0
-                        frameVar.size.width = 0.0
-                        frameVar.size.height = 0.0
+                        frameVar.useContents {
+                            origin.x = 0.0
+                            origin.y = 0.0
+                            size.width = 0.0
+                            size.height = 0.0
+                        }
                         
                         @Suppress("CAST_NEVER_SUCCEEDS")
-                        val initFunc: (Any?, ObjCSelector, platform.CoreGraphics.CGRectVar) -> Any? = 
-                            objc_msgSend as (Any?, ObjCSelector, platform.CoreGraphics.CGRectVar) -> Any?
+                        val initFunc: (Any?, SEL, platform.CoreGraphics.CGRectVar) -> Any? = 
+                            objc_msgSend as (Any?, SEL, platform.CoreGraphics.CGRectVar) -> Any?
                         result = initFunc(allocResult, initSelector, frameVar) as? UIView
                     }
                     
@@ -98,8 +101,8 @@ actual fun VideoSurfaceView(
                     if (wrapper != null && videoTrack != null) {
                         val setTrackSelector = sel_registerName("setTrack:")
                         @Suppress("CAST_NEVER_SUCCEEDS")
-                        val setTrackFunc: (UIView, ObjCSelector, ObjCObject?) -> Unit = 
-                            objc_msgSend as (UIView, ObjCSelector, ObjCObject?) -> Unit
+                        val setTrackFunc: (UIView, SEL, ObjCObject?) -> Unit = 
+                            objc_msgSend as (UIView, SEL, ObjCObject?) -> Unit
                         setTrackFunc(wrapper, setTrackSelector, videoTrack)
                     }
                     
@@ -112,8 +115,8 @@ actual fun VideoSurfaceView(
                 // Обновляем трек при изменении
                 val setTrackSelector = sel_registerName("setTrack:")
                 @Suppress("CAST_NEVER_SUCCEEDS")
-                val setTrackFunc: (UIView, ObjCSelector, ObjCObject?) -> Unit = 
-                    objc_msgSend as (UIView, ObjCSelector, ObjCObject?) -> Unit
+                val setTrackFunc: (UIView, SEL, ObjCObject?) -> Unit = 
+                    objc_msgSend as (UIView, SEL, ObjCObject?) -> Unit
                 setTrackFunc(view, setTrackSelector, videoTrack)
             },
             modifier = modifier

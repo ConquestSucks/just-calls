@@ -35,6 +35,15 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
+        iosTarget.compilations.getByName("main") {
+            cinterops {
+                val LiveKitWrappers by creating {
+                    defFile(project.file("src/nativeInterop/cinterop/LiveKitWrappers.def"))
+                    packageName("com.justcalls.livekit.wrappers")
+                    compilerOpts("-framework", "Foundation", "-framework", "UIKit")
+                }
+            }
+        }
     }
     
     cocoapods {
