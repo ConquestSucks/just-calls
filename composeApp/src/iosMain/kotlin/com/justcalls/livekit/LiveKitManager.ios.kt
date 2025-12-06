@@ -42,7 +42,7 @@ actual class LiveKitManager {
     actual suspend fun connect(tokenResult: RoomTokenResult, serverUrl: String) {
         try {
             // Используем сгенерированные классы из cinterop
-            val newWrapper = com.justcalls.livekit.wrappers.LiveKitWrapper.alloc().init() as? ObjCObject
+            val newWrapper = com.justcalls.livekit.wrappers.LiveKitWrapper() as? ObjCObject
                 ?: throw Exception("Failed to create LiveKitWrapper instance")
             
             // Создаем комнату
@@ -50,9 +50,6 @@ actual class LiveKitManager {
             
             // Подключаемся к комнате
             suspendCancellableCoroutine<Unit> { continuation ->
-                val urlString = serverUrl as NSString
-                val tokenString = tokenResult.token as NSString
-                
                 // Создаем блок для completion
                 val block: (NSError?) -> Unit = { error ->
                     if (error != null) {
@@ -63,7 +60,14 @@ actual class LiveKitManager {
                 }
                 
                 // Вызываем метод с блоком используя обертки из cinterop
-                (newWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.connectWithUrlTokenCompletion(urlString, tokenString, block)
+                // Метод connectWithUrl:token:completion: транслируется в connectWithUrlTokenCompletion
+                // Параметры передаются как именованные: url, token, completion
+                val liveKitWrapper = newWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
+                liveKitWrapper?.connectWithUrlTokenCompletion(
+                    url = serverUrl,
+                    token = tokenResult.token,
+                    completion = block
+                )
             }
             
             this.wrapper = newWrapper
@@ -124,7 +128,12 @@ actual class LiveKitManager {
                     }
                     
                     // Используем обертки из cinterop
-                    (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.setMicrophoneEnabledCompletion(enabled, block)
+                    // Метод setMicrophoneEnabled:completion: транслируется в setMicrophoneEnabledCompletion
+                    val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
+                    liveKitWrapper?.setMicrophoneEnabledCompletion(
+                        enabled = enabled,
+                        completion = block
+                    )
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -149,7 +158,12 @@ actual class LiveKitManager {
                     }
                     
                     // Используем обертки из cinterop
-                    (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.setCameraEnabledCompletion(enabled, block)
+                    // Метод setCameraEnabled:completion: транслируется в setCameraEnabledCompletion
+                    val liveKitWrapper = currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper
+                    liveKitWrapper?.setCameraEnabledCompletion(
+                        enabled = enabled,
+                        completion = block
+                    )
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -234,7 +248,7 @@ actual class LiveKitManager {
     private fun getRemoteVideoTrack(participantId: String): ObjCObject? {
         val currentWrapper = wrapper ?: return null
         return try {
-            (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.getRemoteVideoTrackWithParticipantId(participantId as NSString) as? ObjCObject
+            (currentWrapper as? com.justcalls.livekit.wrappers.LiveKitWrapper)?.getRemoteVideoTrackWithParticipantId(participantId) as? ObjCObject
         } catch (e: Exception) {
             null
         }

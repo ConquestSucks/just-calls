@@ -73,23 +73,20 @@ actual fun VideoSurfaceView(
         UIKitView(
             factory = {
                 // Используем обертки из cinterop
-                memScoped {
-                    val frame = platform.CoreGraphics.CGRectMake(0.0, 0.0, 0.0, 0.0)
-                    val frameVar = alloc<platform.CoreGraphics.CGRectVar>()
-                    frameVar.value = frame
-                    
-                    val wrapper = com.justcalls.livekit.wrappers.VideoViewWrapper.alloc().initWithFrame(frameVar.value) as? UIView
-                    
-                    if (wrapper != null && videoTrack != null) {
-                        (wrapper as? com.justcalls.livekit.wrappers.VideoViewWrapper)?.setTrack(videoTrack as? ObjCObject)
-                    }
-                    
-                    wrapper ?: UIView()
+                val frame = platform.CoreGraphics.CGRectMake(0.0, 0.0, 0.0, 0.0)
+                val wrapper = com.justcalls.livekit.wrappers.VideoViewWrapper(frame) as? UIView
+                
+                if (wrapper != null && videoTrack != null) {
+                    // setTrack принимает VideoTrack?, а не ObjCObject?
+                    // videoTrack уже является ObjCObject?, нужно привести к правильному типу
+                    (wrapper as? com.justcalls.livekit.wrappers.VideoViewWrapper)?.setTrack(videoTrack)
                 }
+                
+                wrapper ?: UIView()
             },
             update = { view ->
                 // Обновляем трек при изменении
-                (view as? com.justcalls.livekit.wrappers.VideoViewWrapper)?.setTrack(videoTrack as? ObjCObject)
+                (view as? com.justcalls.livekit.wrappers.VideoViewWrapper)?.setTrack(videoTrack)
             },
             modifier = modifier
         )
