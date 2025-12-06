@@ -51,18 +51,18 @@ actual class LiveKitManager {
             val initSelector = sel_registerName("init")
             
             @Suppress("CAST_NEVER_SUCCEEDS")
-            val allocFunc: (Any?, SEL) -> Any? = objc_msgSend as (Any?, SEL) -> Any?
+            val allocFunc: (Any?, objc_selector) -> Any? = objc_msgSend as (Any?, objc_selector) -> Any?
             val allocResult = allocFunc(wrapperClass, allocSelector)
             
             @Suppress("CAST_NEVER_SUCCEEDS")
-            val initFunc: (Any?, SEL) -> Any? = objc_msgSend as (Any?, SEL) -> Any?
+            val initFunc: (Any?, objc_selector) -> Any? = objc_msgSend as (Any?, objc_selector) -> Any?
             val newWrapper = initFunc(allocResult, initSelector) as? ObjCObject
                 ?: throw Exception("Failed to create LiveKitWrapper instance")
             
             // Создаем комнату
             val createRoomSelector = sel_registerName("createRoom")
             @Suppress("CAST_NEVER_SUCCEEDS")
-            val createRoomFunc: (ObjCObject, SEL) -> Unit = objc_msgSend as (ObjCObject, SEL) -> Unit
+            val createRoomFunc: (ObjCObject, objc_selector) -> Unit = objc_msgSend as (ObjCObject, objc_selector) -> Unit
             createRoomFunc(newWrapper, createRoomSelector)
             
             // Подключаемся к комнате
@@ -82,8 +82,8 @@ actual class LiveKitManager {
                 // Вызываем метод с блоком
                 val connectSelector = sel_registerName("connectWithUrl:token:completion:")
                 @Suppress("CAST_NEVER_SUCCEEDS")
-                val connectFunc: (ObjCObject, SEL, NSString, NSString, @ObjCBlock (NSError?) -> Unit) -> Unit = 
-                    objc_msgSend as (ObjCObject, SEL, NSString, NSString, @ObjCBlock (NSError?) -> Unit) -> Unit
+                val connectFunc: (ObjCObject, objc_selector, NSString, NSString, @ObjCBlock (NSError?) -> Unit) -> Unit = 
+                    objc_msgSend as (ObjCObject, objc_selector, NSString, NSString, @ObjCBlock (NSError?) -> Unit) -> Unit
                 connectFunc(newWrapper, connectSelector, urlString, tokenString, block)
             }
             
@@ -121,8 +121,8 @@ actual class LiveKitManager {
                     
                     val disconnectSelector = sel_registerName("disconnectWithCompletion:")
                     @Suppress("CAST_NEVER_SUCCEEDS")
-                    val disconnectFunc: (ObjCObject, SEL, @ObjCBlock () -> Unit) -> Unit = 
-                        objc_msgSend as (ObjCObject, SEL, @ObjCBlock () -> Unit) -> Unit
+                    val disconnectFunc: (ObjCObject, objc_selector, @ObjCBlock () -> Unit) -> Unit = 
+                        objc_msgSend as (ObjCObject, objc_selector, @ObjCBlock () -> Unit) -> Unit
                     disconnectFunc(currentWrapper, disconnectSelector, block)
                 }
             }
@@ -149,8 +149,8 @@ actual class LiveKitManager {
                     
                     val setMicrophoneSelector = sel_registerName("setMicrophoneEnabled:completion:")
                     @Suppress("CAST_NEVER_SUCCEEDS")
-                    val setMicrophoneFunc: (ObjCObject, SEL, Boolean, @ObjCBlock (NSError?) -> Unit) -> Unit = 
-                        objc_msgSend as (ObjCObject, SEL, Boolean, @ObjCBlock (NSError?) -> Unit) -> Unit
+                    val setMicrophoneFunc: (ObjCObject, objc_selector, Boolean, @ObjCBlock (NSError?) -> Unit) -> Unit = 
+                        objc_msgSend as (ObjCObject, objc_selector, Boolean, @ObjCBlock (NSError?) -> Unit) -> Unit
                     setMicrophoneFunc(currentWrapper, setMicrophoneSelector, enabled, block)
                 }
             } catch (e: Exception) {
@@ -177,8 +177,8 @@ actual class LiveKitManager {
                     
                     val setCameraSelector = sel_registerName("setCameraEnabled:completion:")
                     @Suppress("CAST_NEVER_SUCCEEDS")
-                    val setCameraFunc: (ObjCObject, SEL, Boolean, @ObjCBlock (NSError?) -> Unit) -> Unit = 
-                        objc_msgSend as (ObjCObject, SEL, Boolean, @ObjCBlock (NSError?) -> Unit) -> Unit
+                    val setCameraFunc: (ObjCObject, objc_selector, Boolean, @ObjCBlock (NSError?) -> Unit) -> Unit = 
+                        objc_msgSend as (ObjCObject, objc_selector, Boolean, @ObjCBlock (NSError?) -> Unit) -> Unit
                     setCameraFunc(currentWrapper, setCameraSelector, enabled, block)
                 }
             } catch (e: Exception) {
@@ -239,7 +239,7 @@ actual class LiveKitManager {
         return try {
             val selector = sel_registerName("getLocalParticipantIdentity")
             @Suppress("CAST_NEVER_SUCCEEDS")
-            val func: (ObjCObject, SEL) -> Any? = objc_msgSend as (ObjCObject, SEL) -> Any?
+            val func: (ObjCObject, objc_selector) -> Any? = objc_msgSend as (ObjCObject, objc_selector) -> Any?
             func(currentWrapper, selector) as? String
         } catch (e: Exception) {
             null
@@ -251,7 +251,7 @@ actual class LiveKitManager {
         return try {
             val selector = sel_registerName("getLocalVideoTrack")
             @Suppress("CAST_NEVER_SUCCEEDS")
-            val func: (ObjCObject, SEL) -> Any? = objc_msgSend as (ObjCObject, SEL) -> Any?
+            val func: (ObjCObject, objc_selector) -> Any? = objc_msgSend as (ObjCObject, objc_selector) -> Any?
             func(currentWrapper, selector) as? ObjCObject
         } catch (e: Exception) {
             null
@@ -263,7 +263,7 @@ actual class LiveKitManager {
         return try {
             val selector = sel_registerName("isLocalCameraEnabled")
             @Suppress("CAST_NEVER_SUCCEEDS")
-            val func: (ObjCObject, SEL) -> Any? = objc_msgSend as (ObjCObject, SEL) -> Any?
+            val func: (ObjCObject, objc_selector) -> Any? = objc_msgSend as (ObjCObject, objc_selector) -> Any?
             (func(currentWrapper, selector) as? NSNumber)?.boolValue ?: false
         } catch (e: Exception) {
             false
@@ -275,7 +275,7 @@ actual class LiveKitManager {
         return try {
             val selector = sel_registerName("getRemoteVideoTrackWithParticipantId:")
             @Suppress("CAST_NEVER_SUCCEEDS")
-            val func: (ObjCObject, SEL, NSString) -> Any? = objc_msgSend as (ObjCObject, SEL, NSString) -> Any?
+            val func: (ObjCObject, objc_selector, NSString) -> Any? = objc_msgSend as (ObjCObject, objc_selector, NSString) -> Any?
             func(currentWrapper, selector, participantId as NSString) as? ObjCObject
         } catch (e: Exception) {
             null
@@ -295,8 +295,8 @@ actual class LiveKitManager {
         // Устанавливаем делегат через setDelegate:
         val setDelegateSelector = sel_registerName("setDelegate:")
         @Suppress("CAST_NEVER_SUCCEEDS")
-        val setDelegateFunc: (ObjCObject, SEL, ObjCObject?) -> Unit = 
-            objc_msgSend as (ObjCObject, SEL, ObjCObject?) -> Unit
+        val setDelegateFunc: (ObjCObject, objc_selector, ObjCObject?) -> Unit = 
+            objc_msgSend as (ObjCObject, objc_selector, ObjCObject?) -> Unit
         
         // Создаем простой делегат-объект
         // Для полноценной реализации нужно создать класс, реализующий протокол
