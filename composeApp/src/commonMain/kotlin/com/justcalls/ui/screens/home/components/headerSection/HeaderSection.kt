@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,50 +67,57 @@ fun HeaderSection(
     
     val userName = displayName ?: "Пользователь"
 
-    Row(
+    Box(
         modifier = Modifier.fillMaxWidth()
-            .padding(top = 40.dp, start = 25.dp, end = 25.dp, bottom = 5.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(top = 40.dp, start = 25.dp, end = 25.dp, bottom = 5.dp)
     ) {
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            UserAvatar(userName.take(2).uppercase())
-            Spacer(modifier = Modifier.width(18.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = userName,
-                    color = AppColors.TextHeader,
-                    fontSize = 21.sp,
-                    fontWeight = FontWeight.Normal,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                UserAvatar(userName.take(2).uppercase())
+                Spacer(modifier = Modifier.width(18.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
-                        modifier = Modifier.size(10.dp)
-                            .clip(CircleShape)
-                            .background(AppColors.ServerStatusActive)
-                    ) {}
-                    Spacer(modifier = Modifier.width(7.dp))
                     Text(
-                        text = "Онлайн",
-                        color = AppColors.TextSecondaryAccent,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal
+                        text = userName,
+                        color = AppColors.TextHeader,
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
                     )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.size(10.dp)
+                                .clip(CircleShape)
+                                .background(AppColors.ServerStatusActive)
+                        ) {}
+                        Spacer(modifier = Modifier.width(7.dp))
+                        Text(
+                            text = "Онлайн",
+                            color = AppColors.TextSecondaryAccent,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
                 }
             }
         }
-        Spacer(modifier = Modifier.width(8.dp))
         IconPressableButton(
             imgPath = "drawable/ic_settings.svg",
             onClick = onSettingsClick,
-            contentDescription = "Настройки"
+            contentDescription = "Настройки",
+            modifier = Modifier.align(Alignment.CenterEnd)
         )
     }
 }
