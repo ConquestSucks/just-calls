@@ -13,8 +13,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.justcalls.livekit.LiveKitManager
 import io.livekit.android.room.track.VideoTrack
 import io.livekit.android.util.flow
-import livekit.org.webrtc.SurfaceViewRenderer
-import livekit.org.webrtc.EglBase
+import io.livekit.android.renderer.TextureViewRenderer
 import kotlinx.coroutines.delay
 
 @Composable
@@ -44,15 +43,7 @@ actual fun VideoSurfaceView(
                 try {
                     val localParticipant = room.localParticipant
                     localParticipant::videoTrackPublications.flow.collect { publications ->
-                        val videoTrack = try {
-                            val first = publications.firstOrNull()
-                            when {
-                                first is Pair<*, *> -> first.second as? VideoTrack
-                                else -> null
-                            }
-                        } catch (e: Exception) {
-                            null
-                        }
+                        val videoTrack = publications.firstOrNull()?.second as? VideoTrack
                         track = videoTrack
                     }
                 } catch (e: Exception) {
@@ -87,25 +78,11 @@ actual fun VideoSurfaceView(
         
         AndroidView(
             factory = { ctx ->
-                val renderer = SurfaceViewRenderer(ctx)
-                renderer.setMirror(isLocal)
-                renderer.setEnableHardwareScaler(true)
+                val renderer = TextureViewRenderer(ctx)
                 
                 if (room != null) {
                     try {
                         room.initVideoRenderer(renderer)
-                        rendererInitialized = true
-                    } catch (e: Exception) {
-                        try {
-                            renderer.init(EglBase.create().eglBaseContext, null)
-                            rendererInitialized = true
-                        } catch (e2: Exception) {
-                            // Ignore
-                        }
-                    }
-                } else {
-                    try {
-                        renderer.init(EglBase.create().eglBaseContext, null)
                         rendererInitialized = true
                     } catch (e: Exception) {
                         // Ignore
@@ -119,18 +96,9 @@ actual fun VideoSurfaceView(
                 if (!rendererInitialized && room != null) {
                     try {
                         room.initVideoRenderer(renderer)
-                        renderer.setMirror(isLocal)
-                        renderer.setEnableHardwareScaler(true)
                         rendererInitialized = true
                     } catch (e: Exception) {
-                        try {
-                            renderer.init(EglBase.create().eglBaseContext, null)
-                            renderer.setMirror(isLocal)
-                            renderer.setEnableHardwareScaler(true)
-                            rendererInitialized = true
-                        } catch (e2: Exception) {
-                            // Ignore
-                        }
+                        // Ignore
                     }
                 }
 
