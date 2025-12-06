@@ -81,7 +81,7 @@ actual fun VideoSurfaceView(
                     val videoViewWrapper = wrapper as? com.justcalls.livekit.wrappers.VideoViewWrapper
                     // VideoTrack - это forward declaration из cinterop, используем ObjCObject с приведением типа
                     @Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
-                    val track = videoTrack as? ObjCObject
+                    val track = videoTrack as? com.justcalls.livekit.wrappers.VideoTrack
                     videoViewWrapper?.setTrack(track)
                 }
                 
@@ -92,7 +92,7 @@ actual fun VideoSurfaceView(
                 if (videoTrack != null) {
                     val videoViewWrapper = view as? com.justcalls.livekit.wrappers.VideoViewWrapper
                     @Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
-                    val track = videoTrack as? ObjCObject
+                    val track = videoTrack as? com.justcalls.livekit.wrappers.VideoTrack
                     videoViewWrapper?.setTrack(track)
                 }
             },
