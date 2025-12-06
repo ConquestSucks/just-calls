@@ -180,7 +180,7 @@ class AuthService(
                 val authHeader = apiClient.getAuthHeader()
                 val url = "${apiClient.baseUrl}/user"
                 
-                val httpResponse: HttpResponse = apiClient.client.put(url) {
+                val httpResponse: HttpResponse = apiClient.client.patch(url) {
                     if (authHeader != null) {
                         header(HttpHeaders.Authorization, authHeader)
                     }

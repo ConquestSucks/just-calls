@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.justcalls.data.network.ApiClient
@@ -73,16 +75,19 @@ fun HeaderSection(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
+            modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
             UserAvatar(userName.take(2).uppercase())
             Spacer(modifier = Modifier.width(18.dp))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = userName,
                     color = AppColors.TextHeader,
                     fontSize = 21.sp,
-                    fontWeight = FontWeight.Normal
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -102,6 +107,7 @@ fun HeaderSection(
                 }
             }
         }
+        Spacer(modifier = Modifier.width(8.dp))
         IconPressableButton(
             imgPath = "drawable/ic_settings.svg",
             onClick = onSettingsClick,
